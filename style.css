@@ -1,3 +1,24 @@
+/* ========================= */
+/* GLOBAL RESET + HOMEPAGE */
+/* ========================= */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background-color: white; /* Change to black if desired */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+img {
+  max-width: 100%;
+  max-height: 100vh;
+  height: auto;
+  width: auto;
+}
+
 /* ===================== */
 /* MERCH PAGE STYLES */
 /* ===================== */
