@@ -26,6 +26,25 @@ nav a {
   font-weight: 500;
 }
 
+/* Merch Image in Nav */
+
+.merch-nav {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.merch-nav img {
+  height: 35px;   /* adjust size if needed */
+  width: auto;
+  vertical-align: middle;
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+
+.merch-nav img:hover {
+  transform: scale(1.05);
+}
+
 /* ========================= */
 /* HOMEPAGE */
 /* ========================= */
