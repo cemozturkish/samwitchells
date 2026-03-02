@@ -16,27 +16,41 @@ html, body {
 nav {
   position: absolute;
   top: 30px;
+  left: 40px;
   right: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
 }
 
 nav a {
-  margin-left: 20px;
   text-decoration: none;
   color: black;
   font-weight: 500;
 }
 
-/* Merch Image in Nav */
+/* Music Button (Top Left) */
+
+.music-nav {
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+  transition: opacity 0.2s ease;
+}
+
+.music-nav:hover {
+  opacity: 0.6;
+}
+
+/* Merch Image in Nav (Top Right) */
 
 .merch-nav {
   display: inline-block;
-  vertical-align: middle;
 }
 
 .merch-nav img {
-  height: 35px;   /* adjust size if needed */
+  height: 70px;
   width: auto;
-  vertical-align: middle;
   transition: transform 0.2s ease;
   cursor: pointer;
 }
