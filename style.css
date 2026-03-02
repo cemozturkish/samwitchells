@@ -84,7 +84,7 @@ nav a {
 .merch {
   height: 100vh;
   box-sizing: border-box;
-  padding: 100px 40px 30px;
+  padding: 100px 40px 20px;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -93,52 +93,61 @@ nav a {
 }
 
 .merch-logo {
-  height: 70px;
+  height: 50px;
   width: auto;
+  flex-shrink: 0;
 }
 
 .merch-tagline {
-  margin: 8px 0 20px;
+  margin: 5px 0 10px;
   font-style: italic;
   opacity: 0.7;
+  flex-shrink: 0;
 }
 
 .products-row {
   display: flex;
+  flex-wrap: nowrap;
   justify-content: center;
-  gap: 40px;
+  gap: 30px;
   flex: 1;
   align-items: center;
   width: 100%;
-  max-width: 1200px;
+  max-width: 1100px;
+  min-height: 0;
 }
 
 .product {
-  flex: 1;
-  max-width: 320px;
+  flex: 1 1 0;
+  min-width: 0;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .product img {
   width: 100%;
+  max-height: 45vh;
+  object-fit: contain;
   border-radius: 8px;
 }
 
 .product h2 {
-  margin-top: 12px;
-  font-size: 1rem;
+  margin-top: 10px;
+  font-size: 0.95rem;
 }
 
 .product p {
   opacity: 0.8;
-  margin: 6px 0 12px;
-  font-size: 0.85rem;
+  margin: 4px 0 10px;
+  font-size: 0.8rem;
 }
 
 .coming-soon {
   display: inline-block;
-  padding: 8px 16px;
+  padding: 6px 14px;
   border: 1px solid black;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   letter-spacing: 1px;
 }
