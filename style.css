@@ -9,6 +9,19 @@ html, body {
   font-family: Arial, sans-serif;
 }
 
+img {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  pointer-events: auto;
+}
+
 /* ========================= */
 /* NAVIGATION */
 /* ========================= */
@@ -158,29 +171,24 @@ nav a {
 
 .music {
   box-sizing: border-box;
-  padding: 140px 8vw 80px;
+  padding: 110px 8vw 80px;
   max-width: 1200px;
   margin: 0 auto;
+  text-align: center;
 }
 
 .music-heading {
   font-size: 2rem;
   font-weight: 600;
   letter-spacing: 2px;
-  margin: 0 0 6px;
-}
-
-.music-tagline {
   margin: 0 0 40px;
-  font-style: italic;
-  opacity: 0.6;
-  font-size: 0.9rem;
 }
 
 .song-list {
   list-style: none;
   margin: 0;
   padding: 0;
+  text-align: left;
 }
 
 .song {
