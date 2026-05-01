@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MUSIC</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <nav>
+    <a href="index.html" class="music-nav">Home</a>
+
+    <a href="merch.html" class="merch-nav">
+      <img src="images/merch-button.png" alt="Merch">
+    </a>
+  </nav>
+
+  <section class="music">
+    <h1 class="music-heading">SONGS</h1>
+    <p class="music-tagline">Hover the lyrics to read what's underneath.</p>
+
+    <ul class="song-list">
+
+      <li class="song">
+        <button class="song-toggle" aria-expanded="false">
+          <span class="song-title">Song Title One</span>
+          <span class="song-divider"></span>
+          <span class="song-icon" aria-hidden="true">+</span>
+        </button>
+        <div class="song-panel">
+          <pre class="lyrics">
+<span class="annotated" data-explain="Replace this with the meaning behind the opening line.">First line of the first verse goes here</span>
+<span class="annotated" data-explain="The second line carries a different image — write what it points to.">Second line continues the thought</span>
+<span class="annotated" data-explain="A turning point: explain why the song pivots here.">Third line lands somewhere new</span>
+
+<span class="annotated" data-explain="Chorus hook — the central idea repeated.">This is the chorus, the part that returns</span>
+<span class="annotated" data-explain="A counter-image that reframes the hook.">And this line answers it back</span>
+          </pre>
+        </div>
+      </li>
+
+      <li class="song">
+        <button class="song-toggle" aria-expanded="false">
+          <span class="song-title">Song Title Two</span>
+          <span class="song-divider"></span>
+          <span class="song-icon" aria-hidden="true">+</span>
+        </button>
+        <div class="song-panel">
+          <pre class="lyrics">
+<span class="annotated" data-explain="Set the scene — who is speaking and to whom.">Opening image of song two</span>
+<span class="annotated" data-explain="A specific memory or detail anchors the verse here.">A small detail that grounds it</span>
+
+<span class="annotated" data-explain="The refrain — say what it really means.">Refrain line</span>
+          </pre>
+        </div>
+      </li>
+
+      <li class="song">
+        <button class="song-toggle" aria-expanded="false">
+          <span class="song-title">Song Title Three</span>
+          <span class="song-divider"></span>
+          <span class="song-icon" aria-hidden="true">+</span>
+        </button>
+        <div class="song-panel">
+          <pre class="lyrics">
+<span class="annotated" data-explain="Replace with your annotation.">Lyric line one</span>
+<span class="annotated" data-explain="Replace with your annotation.">Lyric line two</span>
+<span class="annotated" data-explain="Replace with your annotation.">Lyric line three</span>
+          </pre>
+        </div>
+      </li>
+
+    </ul>
+  </section>
+
+  <script>
+    document.querySelectorAll('.song-toggle').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var song = btn.parentElement;
+        var open = song.classList.toggle('open');
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        btn.querySelector('.song-icon').textContent = open ? '–' : '+';
+      });
+    });
+  </script>
+
+</body>
+</html>
