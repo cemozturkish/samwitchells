@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MUSIC</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <nav>
+    <a href="index.html" class="music-nav">Home</a>
+
+    <a href="merch.html" class="merch-nav">
+      <img src="images/merch-button.png" alt="Merch">
+    </a>
+  </nav>
+
+  <section class="music">
+    <h1 class="music-heading">SONGS</h1>
+    <p class="music-tagline">Hover the lyrics to read what's underneath.</p>
+
+    <ul class="song-list">
+
+      <li class="song">
+        <button class="song-toggle" aria-expanded="false">
+          <span class="song-title">IT'S SAM WITCHELLS</span>
+          <span class="song-divider"></span>
+          <span class="song-icon" aria-hidden="true">+</span>
+        </button>
+        <div class="song-panel">
+          <pre class="lyrics">
+<span class="annotated" data-explain="Lyrics coming soon.">Lyrics for IT'S SAM WITCHELLS go here.</span>
+          </pre>
+        </div>
+      </li>
+
+      <li class="song">
+        <button class="song-toggle" aria-expanded="false">
+          <span class="song-title">ENTITLED</span>
+          <span class="song-divider"></span>
+          <span class="song-icon" aria-hidden="true">+</span>
+        </button>
+        <div class="song-panel">
+          <pre class="lyrics">
+<span class="annotated" data-explain="Lyrics coming soon.">Lyrics for ENTITLED go here.</span>
+          </pre>
+        </div>
+      </li>
+
+      <li class="song">
+        <button class="song-toggle" aria-expanded="false">
+          <span class="song-title">I HAD TO</span>
+          <span class="song-divider"></span>
+          <span class="song-icon" aria-hidden="true">+</span>
+        </button>
+        <div class="song-panel">
+          <pre class="lyrics">
+<span class="annotated" data-explain="Lyrics coming soon.">Lyrics for I HAD TO go here.</span>
+          </pre>
+        </div>
+      </li>
+
+      <li class="song">
+        <button class="song-toggle" aria-expanded="false">
+          <span class="song-title">BE THE ONE</span>
+          <span class="song-divider"></span>
+          <span class="song-icon" aria-hidden="true">+</span>
+        </button>
+        <div class="song-panel">
+          <pre class="lyrics">
+<span class="annotated" data-explain="Lyrics coming soon.">Lyrics for BE THE ONE go here.</span>
+          </pre>
+        </div>
+      </li>
+
+      <li class="song">
+        <button class="song-toggle" aria-expanded="false">
+          <span class="song-title">THE LIGHT</span>
+          <span class="song-divider"></span>
+          <span class="song-icon" aria-hidden="true">+</span>
+        </button>
+        <div class="song-panel">
+          <pre class="lyrics">
+<span class="annotated" data-explain="Lyrics coming soon.">Lyrics for THE LIGHT go here.</span>
+          </pre>
+        </div>
+      </li>
+
+    </ul>
+  </section>
+
+  <script>
+    document.querySelectorAll('.song-toggle').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var song = btn.parentElement;
+        var open = song.classList.toggle('open');
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        btn.querySelector('.song-icon').textContent = open ? '–' : '+';
+      });
+    });
+  </script>
+
+</body>
+</html>
