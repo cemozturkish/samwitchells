@@ -23,8 +23,40 @@
   </nav>
 
   <section class="home">
-    <img src="background.jpg" alt="Logo">
+    <img src="background.jpg" alt="Logo" class="home-logo">
   </section>
+
+  <script>
+    (function () {
+      const logo = document.querySelector('.home-logo');
+      if (!logo) return;
+
+      const MAX_SHIFT = 15;
+      let targetX = 0, targetY = 0;
+      let currentX = 0, currentY = 0;
+      let rafId = null;
+
+      function animate() {
+        currentX += (targetX - currentX) * 0.08;
+        currentY += (targetY - currentY) * 0.08;
+        logo.style.transform = `translate(${currentX}px, ${currentY}px)`;
+
+        if (Math.abs(targetX - currentX) > 0.05 || Math.abs(targetY - currentY) > 0.05) {
+          rafId = requestAnimationFrame(animate);
+        } else {
+          rafId = null;
+        }
+      }
+
+      window.addEventListener('mousemove', function (e) {
+        const nx = (e.clientX / window.innerWidth) * 2 - 1;
+        const ny = (e.clientY / window.innerHeight) * 2 - 1;
+        targetX = -nx * MAX_SHIFT;
+        targetY = -ny * MAX_SHIFT;
+        if (!rafId) rafId = requestAnimationFrame(animate);
+      });
+    })();
+  </script>
 
 </body>
 </html>
