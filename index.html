@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 
-<body>
+<body class="home-page">
 
   <nav>
     <a href="music.html" class="music-nav">Music</a>
@@ -23,34 +23,20 @@
   </nav>
 
   <section class="home">
-    <div class="silver-logo" aria-label="SAM WITCHELLS">
-      <svg class="silver-logo-art" viewBox="0 0 1536 1024" role="img" aria-labelledby="silver-logo-title">
-        <title id="silver-logo-title">SAM WITCHELLS silver logo</title>
+    <div class="silver-logo" aria-hidden="true">
+      <svg class="silver-logo-art" viewBox="0 0 1774 887" focusable="false">
         <defs>
-          <filter id="logo-mask-invert" color-interpolation-filters="sRGB">
-            <feComponentTransfer>
-              <feFuncR type="table" tableValues="1 0" />
-              <feFuncG type="table" tableValues="1 0" />
-              <feFuncB type="table" tableValues="1 0" />
+          <filter id="transparent-logo-bg" color-interpolation-filters="sRGB">
+            <feColorMatrix in="SourceGraphic" type="luminanceToAlpha" result="logo-alpha" />
+            <feComponentTransfer in="logo-alpha" result="hard-alpha">
+              <feFuncA type="linear" slope="64" intercept="-18" />
             </feComponentTransfer>
+            <feComposite in="SourceGraphic" in2="hard-alpha" operator="in" />
           </filter>
 
-          <mask id="logo-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="1536" height="1024" style="mask-type: luminance;">
-            <rect width="1536" height="1024" fill="black" />
-            <image href="background.jpg" width="1536" height="1024" preserveAspectRatio="xMidYMid meet" filter="url(#logo-mask-invert)" />
+          <mask id="logo-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="1774" height="887" style="mask-type: alpha;">
+            <image href="background.png" width="1774" height="887" preserveAspectRatio="xMidYMid meet" filter="url(#transparent-logo-bg)" />
           </mask>
-
-          <linearGradient id="silver-base" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#3b3b3f" />
-            <stop offset="15%" stop-color="#f7f7fb" />
-            <stop offset="27%" stop-color="#74747b" />
-            <stop offset="42%" stop-color="#d9d9df" />
-            <stop offset="55%" stop-color="#4d4d54" />
-            <stop offset="70%" stop-color="#ffffff" />
-            <stop offset="84%" stop-color="#8d8d94" />
-            <stop offset="100%" stop-color="#29292e" />
-          </linearGradient>
-
 
           <pattern id="silver-brush" patternUnits="userSpaceOnUse" width="16" height="16" patternTransform="rotate(14)">
             <rect width="16" height="16" fill="#ffffff" fill-opacity="0" />
@@ -68,9 +54,9 @@
         </defs>
 
         <g mask="url(#logo-mask)">
-          <rect width="1536" height="1024" fill="url(#silver-base)" />
-          <rect class="silver-logo-brushed" width="1536" height="1024" fill="url(#silver-brush)" />
-          <rect width="1536" height="1024" fill="url(#silver-shine)" />
+          <image href="background.png" width="1774" height="887" preserveAspectRatio="xMidYMid meet" filter="url(#transparent-logo-bg)" />
+          <rect class="silver-logo-brushed" width="1774" height="887" fill="url(#silver-brush)" />
+          <rect width="1774" height="887" fill="url(#silver-shine)" />
         </g>
       </svg>
     </div>
@@ -82,13 +68,16 @@
       const shine = document.querySelector('#silver-shine');
       if (!logo || !shine) return;
 
-      const MAX_SHIFT = 15;
+      const MAX_SHIFT = 4;
       const SMOOTHING = 0.1;
+      const WIGGLE_DELAY = 30;
       let targetShiftX = 0, targetShiftY = 0;
       let currentShiftX = 0, currentShiftY = 0;
       let targetLightX = 50, targetLightY = 45;
       let currentLightX = 50, currentLightY = 45;
       let rafId = null;
+      let wiggleTimeout = null;
+      let pendingPoint = null;
 
       function render() {
         currentShiftX += (targetShiftX - currentShiftX) * SMOOTHING;
@@ -124,13 +113,28 @@
         if (!rafId) rafId = requestAnimationFrame(render);
       }
 
+      function queueLogoLighting(clientX, clientY) {
+        pendingPoint = { clientX, clientY };
+
+        if (wiggleTimeout) return;
+
+        wiggleTimeout = window.setTimeout(function () {
+          wiggleTimeout = null;
+          if (!pendingPoint) return;
+
+          const point = pendingPoint;
+          pendingPoint = null;
+          updateLogoLighting(point.clientX, point.clientY);
+        }, WIGGLE_DELAY);
+      }
+
       window.addEventListener('mousemove', function (e) {
-        updateLogoLighting(e.clientX, e.clientY);
+        queueLogoLighting(e.clientX, e.clientY);
       });
 
       window.addEventListener('touchmove', function (e) {
         if (!e.touches.length) return;
-        updateLogoLighting(e.touches[0].clientX, e.touches[0].clientY);
+        queueLogoLighting(e.touches[0].clientX, e.touches[0].clientY);
       }, { passive: true });
     })();
   </script>
