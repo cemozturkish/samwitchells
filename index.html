@@ -64,11 +64,14 @@
 
       const MAX_SHIFT = 8;
       const SMOOTHING = 0.1;
+      const WIGGLE_DELAY = 30;
       let targetShiftX = 0, targetShiftY = 0;
       let currentShiftX = 0, currentShiftY = 0;
       let targetLightX = 50, targetLightY = 45;
       let currentLightX = 50, currentLightY = 45;
       let rafId = null;
+      let wiggleTimeout = null;
+      let pendingPoint = null;
 
       function render() {
         currentShiftX += (targetShiftX - currentShiftX) * SMOOTHING;
@@ -104,13 +107,28 @@
         if (!rafId) rafId = requestAnimationFrame(render);
       }
 
+      function queueLogoLighting(clientX, clientY) {
+        pendingPoint = { clientX, clientY };
+
+        if (wiggleTimeout) return;
+
+        wiggleTimeout = window.setTimeout(function () {
+          wiggleTimeout = null;
+          if (!pendingPoint) return;
+
+          const point = pendingPoint;
+          pendingPoint = null;
+          updateLogoLighting(point.clientX, point.clientY);
+        }, WIGGLE_DELAY);
+      }
+
       window.addEventListener('mousemove', function (e) {
-        updateLogoLighting(e.clientX, e.clientY);
+        queueLogoLighting(e.clientX, e.clientY);
       });
 
       window.addEventListener('touchmove', function (e) {
         if (!e.touches.length) return;
-        updateLogoLighting(e.touches[0].clientX, e.touches[0].clientY);
+        queueLogoLighting(e.touches[0].clientX, e.touches[0].clientY);
       }, { passive: true });
     })();
   </script>
