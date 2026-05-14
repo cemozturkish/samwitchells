@@ -59,16 +59,13 @@
   <script>
     (function () {
       const logo = document.querySelector('.silver-logo');
-      const shine = document.querySelector('#silver-shine');
-      if (!logo || !shine) return;
+      if (!logo) return;
 
       const MAX_SHIFT = 8;
       const SMOOTHING = 0.1;
       const WIGGLE_DELAY = 30;
       let targetShiftX = 0, targetShiftY = 0;
       let currentShiftX = 0, currentShiftY = 0;
-      let targetLightX = 50, targetLightY = 45;
-      let currentLightX = 50, currentLightY = 45;
       let rafId = null;
       let wiggleTimeout = null;
       let pendingPoint = null;
@@ -76,18 +73,11 @@
       function render() {
         currentShiftX += (targetShiftX - currentShiftX) * SMOOTHING;
         currentShiftY += (targetShiftY - currentShiftY) * SMOOTHING;
-        currentLightX += (targetLightX - currentLightX) * SMOOTHING;
-        currentLightY += (targetLightY - currentLightY) * SMOOTHING;
-
         logo.style.transform = `translate(${currentShiftX}px, ${currentShiftY}px)`;
-        shine.setAttribute('cx', `${currentLightX}%`);
-        shine.setAttribute('cy', `${currentLightY}%`);
 
         const isMoving =
           Math.abs(targetShiftX - currentShiftX) > 0.05 ||
-          Math.abs(targetShiftY - currentShiftY) > 0.05 ||
-          Math.abs(targetLightX - currentLightX) > 0.05 ||
-          Math.abs(targetLightY - currentLightY) > 0.05;
+          Math.abs(targetShiftY - currentShiftY) > 0.05;
 
         rafId = isMoving ? requestAnimationFrame(render) : null;
       }
@@ -97,12 +87,6 @@
         const viewportY = (clientY / window.innerHeight) * 2 - 1;
         targetShiftX = -viewportX * MAX_SHIFT;
         targetShiftY = -viewportY * MAX_SHIFT;
-
-        const logoRect = logo.getBoundingClientRect();
-        const localX = ((clientX - logoRect.left) / logoRect.width) * 100;
-        const localY = ((clientY - logoRect.top) / logoRect.height) * 100;
-        targetLightX = Math.max(0, Math.min(100, localX));
-        targetLightY = Math.max(0, Math.min(100, localY));
 
         if (!rafId) rafId = requestAnimationFrame(render);
       }
