@@ -2,11 +2,16 @@
 /* GLOBAL RESET */
 /* ========================= */
 
+:root {
+  --site-background: #000;
+  --site-foreground: #fff;
+}
+
 html, body {
   margin: 0;
   padding: 0;
-  background-color: #000;
-  color: #fff;
+  background-color: var(--site-background);
+  color: var(--site-foreground);
   font-family: Arial, sans-serif;
 }
 
@@ -45,7 +50,7 @@ nav {
 
 nav a {
   text-decoration: none;
-  color: white;
+  color: var(--site-foreground);
   font-weight: 500;
 }
 
@@ -189,7 +194,7 @@ nav a {
 .coming-soon {
   display: inline-block;
   padding: 6px 14px;
-  border: 1px solid white;
+  border: 1px solid var(--site-foreground);
   font-size: 0.75rem;
   letter-spacing: 1px;
 }
@@ -239,7 +244,7 @@ nav a {
   cursor: pointer;
   font-family: inherit;
   text-align: left;
-  color: white;
+  color: var(--site-foreground);
 }
 
 .song-title {
