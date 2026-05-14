@@ -23,38 +23,137 @@
   </nav>
 
   <section class="home">
-    <img src="background.jpg" alt="Logo" class="home-logo">
+    <div class="silver-logo" aria-label="SAM WITCHELLS">
+      <img src="background.jpg" alt="SAM WITCHELLS logo" class="home-logo-fallback">
+      <canvas class="silver-logo-canvas" width="1152" height="768" role="img" aria-label="SAM WITCHELLS silver logo"></canvas>
+    </div>
   </section>
 
   <script>
     (function () {
-      const logo = document.querySelector('.home-logo');
-      if (!logo) return;
+      const logo = document.querySelector('.silver-logo');
+      const canvas = document.querySelector('.silver-logo-canvas');
+      const fallback = document.querySelector('.home-logo-fallback');
+      if (!logo || !canvas || !fallback) return;
+
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) return;
 
       const MAX_SHIFT = 15;
-      let targetX = 0, targetY = 0;
-      let currentX = 0, currentY = 0;
+      const SMOOTHING = 0.1;
+      const WIDTH = canvas.width;
+      const HEIGHT = canvas.height;
+      const image = new Image();
+      let mask = null;
+      let targetShiftX = 0, targetShiftY = 0;
+      let currentShiftX = 0, currentShiftY = 0;
+      let targetLightX = 50, targetLightY = 45;
+      let currentLightX = 50, currentLightY = 45;
       let rafId = null;
 
-      function animate() {
-        currentX += (targetX - currentX) * 0.08;
-        currentY += (targetY - currentY) * 0.08;
-        logo.style.transform = `translate(${currentX}px, ${currentY}px)`;
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
 
-        if (Math.abs(targetX - currentX) > 0.05 || Math.abs(targetY - currentY) > 0.05) {
-          rafId = requestAnimationFrame(animate);
-        } else {
-          rafId = null;
+      function buildMask() {
+        const maskCanvas = document.createElement('canvas');
+        const maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
+        maskCanvas.width = WIDTH;
+        maskCanvas.height = HEIGHT;
+        maskCtx.drawImage(image, 0, 0, WIDTH, HEIGHT);
+
+        const source = maskCtx.getImageData(0, 0, WIDTH, HEIGHT).data;
+        mask = new Uint8ClampedArray(WIDTH * HEIGHT);
+
+        for (let i = 0, pixel = 0; i < source.length; i += 4, pixel += 1) {
+          const luminance = source[i] * 0.2126 + source[i + 1] * 0.7152 + source[i + 2] * 0.0722;
+          mask[pixel] = clamp((246 - luminance) * 3.4, 0, 255);
         }
       }
 
-      window.addEventListener('mousemove', function (e) {
-        const nx = (e.clientX / window.innerWidth) * 2 - 1;
-        const ny = (e.clientY / window.innerHeight) * 2 - 1;
-        targetX = -nx * MAX_SHIFT;
-        targetY = -ny * MAX_SHIFT;
-        if (!rafId) rafId = requestAnimationFrame(animate);
+      function drawSilverLogo() {
+        if (!mask) return;
+
+        const frame = ctx.createImageData(WIDTH, HEIGHT);
+        const pixels = frame.data;
+        const lightX = currentLightX / 100;
+        const lightY = currentLightY / 100;
+
+        for (let y = 0, pixel = 0, i = 0; y < HEIGHT; y += 1) {
+          const ny = y / HEIGHT;
+
+          for (let x = 0; x < WIDTH; x += 1, pixel += 1, i += 4) {
+            const alpha = mask[pixel];
+            if (alpha === 0) continue;
+
+            const nx = x / WIDTH;
+            const diagonal = nx * 0.72 + ny * 0.28;
+            const brush = Math.sin((x + y * 0.7) * 0.08) * 12;
+            const bevel = Math.sin((nx * 7.5 - ny * 4.5) * Math.PI) * 16;
+            const distanceFromLight = Math.hypot(nx - lightX, ny - lightY);
+            const shine = Math.pow(clamp(1 - distanceFromLight / 0.36, 0, 1), 2.4) * 185;
+            const value = clamp(58 + diagonal * 100 + brush + bevel + shine, 42, 255);
+
+            pixels[i] = clamp(value - 5, 0, 255);
+            pixels[i + 1] = clamp(value - 3, 0, 255);
+            pixels[i + 2] = clamp(value + 10, 0, 255);
+            pixels[i + 3] = alpha;
+          }
+        }
+
+        ctx.putImageData(frame, 0, 0);
+        canvas.classList.add('is-ready');
+        logo.classList.add('is-rendered');
+      }
+
+      function render() {
+        currentShiftX += (targetShiftX - currentShiftX) * SMOOTHING;
+        currentShiftY += (targetShiftY - currentShiftY) * SMOOTHING;
+        currentLightX += (targetLightX - currentLightX) * SMOOTHING;
+        currentLightY += (targetLightY - currentLightY) * SMOOTHING;
+
+        logo.style.transform = `translate(${currentShiftX}px, ${currentShiftY}px)`;
+        drawSilverLogo();
+
+        const isMoving =
+          Math.abs(targetShiftX - currentShiftX) > 0.05 ||
+          Math.abs(targetShiftY - currentShiftY) > 0.05 ||
+          Math.abs(targetLightX - currentLightX) > 0.05 ||
+          Math.abs(targetLightY - currentLightY) > 0.05;
+
+        rafId = isMoving ? requestAnimationFrame(render) : null;
+      }
+
+      function updateLogoLighting(clientX, clientY) {
+        const viewportX = (clientX / window.innerWidth) * 2 - 1;
+        const viewportY = (clientY / window.innerHeight) * 2 - 1;
+        targetShiftX = -viewportX * MAX_SHIFT;
+        targetShiftY = -viewportY * MAX_SHIFT;
+
+        const logoRect = logo.getBoundingClientRect();
+        const localX = ((clientX - logoRect.left) / logoRect.width) * 100;
+        const localY = ((clientY - logoRect.top) / logoRect.height) * 100;
+        targetLightX = clamp(localX, 0, 100);
+        targetLightY = clamp(localY, 0, 100);
+
+        if (!rafId) rafId = requestAnimationFrame(render);
+      }
+
+      image.addEventListener('load', function () {
+        buildMask();
+        drawSilverLogo();
       });
+
+      image.src = fallback.currentSrc || fallback.src;
+
+      window.addEventListener('mousemove', function (e) {
+        updateLogoLighting(e.clientX, e.clientY);
+      });
+
+      window.addEventListener('touchmove', function (e) {
+        if (!e.touches.length) return;
+        updateLogoLighting(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
     })();
   </script>
 
