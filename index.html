@@ -23,19 +23,13 @@
   </nav>
 
   <section class="home">
-    <div class="silver-logo" aria-hidden="true">
-      <svg class="silver-logo-art" viewBox="0 0 1774 887" focusable="false">
+    <div class="silver-logo" aria-label="SAM WITCHELLS">
+      <svg class="silver-logo-art" viewBox="0 0 1774 887" role="img" aria-labelledby="silver-logo-title">
+        <title id="silver-logo-title">SAM WITCHELLS silver logo</title>
         <defs>
-          <filter id="transparent-logo-bg" color-interpolation-filters="sRGB">
-            <feColorMatrix in="SourceGraphic" type="luminanceToAlpha" result="logo-alpha" />
-            <feComponentTransfer in="logo-alpha" result="hard-alpha">
-              <feFuncA type="linear" slope="64" intercept="-18" />
-            </feComponentTransfer>
-            <feComposite in="SourceGraphic" in2="hard-alpha" operator="in" />
-          </filter>
-
-          <mask id="logo-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="1774" height="887" style="mask-type: alpha;">
-            <image href="background.png" width="1774" height="887" preserveAspectRatio="xMidYMid meet" filter="url(#transparent-logo-bg)" />
+          <mask id="logo-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="1774" height="887" style="mask-type: luminance;">
+            <rect width="1774" height="887" fill="black" />
+            <image href="background.png" width="1774" height="887" preserveAspectRatio="xMidYMid meet" />
           </mask>
 
           <pattern id="silver-brush" patternUnits="userSpaceOnUse" width="16" height="16" patternTransform="rotate(14)">
@@ -47,14 +41,14 @@
           <radialGradient id="silver-shine" cx="50%" cy="45%" r="34%">
             <stop offset="0%" stop-color="#ffffff" stop-opacity="1" />
             <stop offset="18%" stop-color="#f5f5ff" stop-opacity="0.95" />
-            <stop offset="45%" stop-color="#bfc0ca" stop-opacity="0.45" />
-            <stop offset="78%" stop-color="#15151a" stop-opacity="0.28" />
+            <stop offset="42%" stop-color="#bfc0ca" stop-opacity="0.32" />
+            <stop offset="64%" stop-color="#000000" stop-opacity="0" />
             <stop offset="100%" stop-color="#000000" stop-opacity="0" />
           </radialGradient>
         </defs>
 
+        <image href="background.png" width="1774" height="887" preserveAspectRatio="xMidYMid meet" />
         <g mask="url(#logo-mask)">
-          <image href="background.png" width="1774" height="887" preserveAspectRatio="xMidYMid meet" filter="url(#transparent-logo-bg)" />
           <rect class="silver-logo-brushed" width="1774" height="887" fill="url(#silver-brush)" />
           <rect width="1774" height="887" fill="url(#silver-shine)" />
         </g>
@@ -65,16 +59,13 @@
   <script>
     (function () {
       const logo = document.querySelector('.silver-logo');
-      const shine = document.querySelector('#silver-shine');
-      if (!logo || !shine) return;
+      if (!logo) return;
 
-      const MAX_SHIFT = 4;
+      const MAX_SHIFT = 8;
       const SMOOTHING = 0.1;
       const WIGGLE_DELAY = 30;
       let targetShiftX = 0, targetShiftY = 0;
       let currentShiftX = 0, currentShiftY = 0;
-      let targetLightX = 50, targetLightY = 45;
-      let currentLightX = 50, currentLightY = 45;
       let rafId = null;
       let wiggleTimeout = null;
       let pendingPoint = null;
@@ -82,18 +73,11 @@
       function render() {
         currentShiftX += (targetShiftX - currentShiftX) * SMOOTHING;
         currentShiftY += (targetShiftY - currentShiftY) * SMOOTHING;
-        currentLightX += (targetLightX - currentLightX) * SMOOTHING;
-        currentLightY += (targetLightY - currentLightY) * SMOOTHING;
-
         logo.style.transform = `translate(${currentShiftX}px, ${currentShiftY}px)`;
-        shine.setAttribute('cx', `${currentLightX}%`);
-        shine.setAttribute('cy', `${currentLightY}%`);
 
         const isMoving =
           Math.abs(targetShiftX - currentShiftX) > 0.05 ||
-          Math.abs(targetShiftY - currentShiftY) > 0.05 ||
-          Math.abs(targetLightX - currentLightX) > 0.05 ||
-          Math.abs(targetLightY - currentLightY) > 0.05;
+          Math.abs(targetShiftY - currentShiftY) > 0.05;
 
         rafId = isMoving ? requestAnimationFrame(render) : null;
       }
@@ -103,12 +87,6 @@
         const viewportY = (clientY / window.innerHeight) * 2 - 1;
         targetShiftX = -viewportX * MAX_SHIFT;
         targetShiftY = -viewportY * MAX_SHIFT;
-
-        const logoRect = logo.getBoundingClientRect();
-        const localX = ((clientX - logoRect.left) / logoRect.width) * 100;
-        const localY = ((clientY - logoRect.top) / logoRect.height) * 100;
-        targetLightX = Math.max(0, Math.min(100, localX));
-        targetLightY = Math.max(0, Math.min(100, localY));
 
         if (!rafId) rafId = requestAnimationFrame(render);
       }
