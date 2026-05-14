@@ -9,6 +9,12 @@ html, body {
   font-family: Arial, sans-serif;
 }
 
+body.home-page {
+  min-height: 100vh;
+  overflow: hidden;
+  background: #000;
+}
+
 img {
   -webkit-user-drag: none;
   -khtml-user-drag: none;
@@ -41,6 +47,10 @@ nav a {
   text-decoration: none;
   color: black;
   font-weight: 500;
+}
+
+.home-page nav a {
+  color: white;
 }
 
 /* Music Button (Top Left) */
@@ -78,20 +88,21 @@ nav a {
 
 .home {
   height: 100vh;
+  overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
 .silver-logo {
-  width: min(78vw, 1050px);
-  max-height: 70vh;
+  width: min(48vw, 640px);
+  max-height: 52vh;
   transition: filter 0.2s ease;
   will-change: transform;
 }
 
 .silver-logo:hover {
-  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.18));
+  filter: drop-shadow(0 18px 28px rgba(255, 255, 255, 0.16));
 }
 
 .silver-logo-art {
@@ -108,7 +119,7 @@ nav a {
 
 @media (max-width: 700px) {
   .silver-logo {
-    width: 92vw;
+    width: min(78vw, 420px);
   }
 }
 
