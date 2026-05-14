@@ -23,38 +23,115 @@
   </nav>
 
   <section class="home">
-    <img src="background.jpg" alt="Logo" class="home-logo">
+    <div class="silver-logo" aria-label="SAM WITCHELLS">
+      <svg class="silver-logo-art" viewBox="0 0 1536 1024" role="img" aria-labelledby="silver-logo-title">
+        <title id="silver-logo-title">SAM WITCHELLS silver logo</title>
+        <defs>
+          <filter id="logo-mask-invert" color-interpolation-filters="sRGB">
+            <feComponentTransfer>
+              <feFuncR type="table" tableValues="1 0" />
+              <feFuncG type="table" tableValues="1 0" />
+              <feFuncB type="table" tableValues="1 0" />
+            </feComponentTransfer>
+          </filter>
+
+          <mask id="logo-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="1536" height="1024" style="mask-type: luminance;">
+            <rect width="1536" height="1024" fill="black" />
+            <image href="background.jpg" width="1536" height="1024" preserveAspectRatio="xMidYMid meet" filter="url(#logo-mask-invert)" />
+          </mask>
+
+          <linearGradient id="silver-base" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#3b3b3f" />
+            <stop offset="15%" stop-color="#f7f7fb" />
+            <stop offset="27%" stop-color="#74747b" />
+            <stop offset="42%" stop-color="#d9d9df" />
+            <stop offset="55%" stop-color="#4d4d54" />
+            <stop offset="70%" stop-color="#ffffff" />
+            <stop offset="84%" stop-color="#8d8d94" />
+            <stop offset="100%" stop-color="#29292e" />
+          </linearGradient>
+
+
+          <pattern id="silver-brush" patternUnits="userSpaceOnUse" width="16" height="16" patternTransform="rotate(14)">
+            <rect width="16" height="16" fill="#ffffff" fill-opacity="0" />
+            <rect width="2" height="16" fill="#ffffff" fill-opacity="0.55" />
+            <rect x="4" width="1.5" height="16" fill="#000000" fill-opacity="0.14" />
+          </pattern>
+
+          <radialGradient id="silver-shine" cx="50%" cy="45%" r="34%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="1" />
+            <stop offset="18%" stop-color="#f5f5ff" stop-opacity="0.95" />
+            <stop offset="45%" stop-color="#bfc0ca" stop-opacity="0.45" />
+            <stop offset="78%" stop-color="#15151a" stop-opacity="0.28" />
+            <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+          </radialGradient>
+        </defs>
+
+        <g mask="url(#logo-mask)">
+          <rect width="1536" height="1024" fill="url(#silver-base)" />
+          <rect class="silver-logo-brushed" width="1536" height="1024" fill="url(#silver-brush)" />
+          <rect width="1536" height="1024" fill="url(#silver-shine)" />
+        </g>
+      </svg>
+    </div>
   </section>
 
   <script>
     (function () {
-      const logo = document.querySelector('.home-logo');
-      if (!logo) return;
+      const logo = document.querySelector('.silver-logo');
+      const shine = document.querySelector('#silver-shine');
+      if (!logo || !shine) return;
 
       const MAX_SHIFT = 15;
-      let targetX = 0, targetY = 0;
-      let currentX = 0, currentY = 0;
+      const SMOOTHING = 0.1;
+      let targetShiftX = 0, targetShiftY = 0;
+      let currentShiftX = 0, currentShiftY = 0;
+      let targetLightX = 50, targetLightY = 45;
+      let currentLightX = 50, currentLightY = 45;
       let rafId = null;
 
-      function animate() {
-        currentX += (targetX - currentX) * 0.08;
-        currentY += (targetY - currentY) * 0.08;
-        logo.style.transform = `translate(${currentX}px, ${currentY}px)`;
+      function render() {
+        currentShiftX += (targetShiftX - currentShiftX) * SMOOTHING;
+        currentShiftY += (targetShiftY - currentShiftY) * SMOOTHING;
+        currentLightX += (targetLightX - currentLightX) * SMOOTHING;
+        currentLightY += (targetLightY - currentLightY) * SMOOTHING;
 
-        if (Math.abs(targetX - currentX) > 0.05 || Math.abs(targetY - currentY) > 0.05) {
-          rafId = requestAnimationFrame(animate);
-        } else {
-          rafId = null;
-        }
+        logo.style.transform = `translate(${currentShiftX}px, ${currentShiftY}px)`;
+        shine.setAttribute('cx', `${currentLightX}%`);
+        shine.setAttribute('cy', `${currentLightY}%`);
+
+        const isMoving =
+          Math.abs(targetShiftX - currentShiftX) > 0.05 ||
+          Math.abs(targetShiftY - currentShiftY) > 0.05 ||
+          Math.abs(targetLightX - currentLightX) > 0.05 ||
+          Math.abs(targetLightY - currentLightY) > 0.05;
+
+        rafId = isMoving ? requestAnimationFrame(render) : null;
+      }
+
+      function updateLogoLighting(clientX, clientY) {
+        const viewportX = (clientX / window.innerWidth) * 2 - 1;
+        const viewportY = (clientY / window.innerHeight) * 2 - 1;
+        targetShiftX = -viewportX * MAX_SHIFT;
+        targetShiftY = -viewportY * MAX_SHIFT;
+
+        const logoRect = logo.getBoundingClientRect();
+        const localX = ((clientX - logoRect.left) / logoRect.width) * 100;
+        const localY = ((clientY - logoRect.top) / logoRect.height) * 100;
+        targetLightX = Math.max(0, Math.min(100, localX));
+        targetLightY = Math.max(0, Math.min(100, localY));
+
+        if (!rafId) rafId = requestAnimationFrame(render);
       }
 
       window.addEventListener('mousemove', function (e) {
-        const nx = (e.clientX / window.innerWidth) * 2 - 1;
-        const ny = (e.clientY / window.innerHeight) * 2 - 1;
-        targetX = -nx * MAX_SHIFT;
-        targetY = -ny * MAX_SHIFT;
-        if (!rafId) rafId = requestAnimationFrame(animate);
+        updateLogoLighting(e.clientX, e.clientY);
       });
+
+      window.addEventListener('touchmove', function (e) {
+        if (!e.touches.length) return;
+        updateLogoLighting(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
     })();
   </script>
 
