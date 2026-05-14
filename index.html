@@ -23,8 +23,36 @@
   </nav>
 
   <section class="home">
-    <div class="silver-logo" aria-hidden="true">
-      <img class="silver-logo-art" src="background.png" alt="" draggable="false">
+    <div class="silver-logo" aria-label="SAM WITCHELLS">
+      <svg class="silver-logo-art" viewBox="0 0 1774 887" role="img" aria-labelledby="silver-logo-title">
+        <title id="silver-logo-title">SAM WITCHELLS silver logo</title>
+        <defs>
+          <mask id="logo-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="1774" height="887" style="mask-type: luminance;">
+            <rect width="1774" height="887" fill="black" />
+            <image href="background.png" width="1774" height="887" preserveAspectRatio="xMidYMid meet" />
+          </mask>
+
+          <pattern id="silver-brush" patternUnits="userSpaceOnUse" width="16" height="16" patternTransform="rotate(14)">
+            <rect width="16" height="16" fill="#ffffff" fill-opacity="0" />
+            <rect width="2" height="16" fill="#ffffff" fill-opacity="0.55" />
+            <rect x="4" width="1.5" height="16" fill="#000000" fill-opacity="0.14" />
+          </pattern>
+
+          <radialGradient id="silver-shine" cx="50%" cy="45%" r="34%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="1" />
+            <stop offset="18%" stop-color="#f5f5ff" stop-opacity="0.95" />
+            <stop offset="42%" stop-color="#bfc0ca" stop-opacity="0.32" />
+            <stop offset="64%" stop-color="#000000" stop-opacity="0" />
+            <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+          </radialGradient>
+        </defs>
+
+        <image href="background.png" width="1774" height="887" preserveAspectRatio="xMidYMid meet" />
+        <g mask="url(#logo-mask)">
+          <rect class="silver-logo-brushed" width="1774" height="887" fill="url(#silver-brush)" />
+          <rect width="1774" height="887" fill="url(#silver-shine)" />
+        </g>
+      </svg>
     </div>
   </section>
 
@@ -33,7 +61,7 @@
       const logo = document.querySelector('.silver-logo');
       if (!logo) return;
 
-      const MAX_SHIFT = 4;
+      const MAX_SHIFT = 8;
       const SMOOTHING = 0.1;
       const WIGGLE_DELAY = 30;
       let targetShiftX = 0, targetShiftY = 0;
