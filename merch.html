@@ -22,15 +22,19 @@
 
     <div class="products-row">
       <div class="product">
-        <img src="images/tshirt.jpg" alt="Artist T-Shirt">
+        <img src="images/tshirt-black.jpg" alt="Artist T-Shirt" class="tshirt-image" data-black="images/tshirt-black.jpg" data-white="images/tshirt-white.jpg">
+        <div class="color-options">
+          <button type="button" class="color-swatch color-black active" aria-label="Black" data-color="black"></button>
+          <button type="button" class="color-swatch color-white" aria-label="White" data-color="white"></button>
+        </div>
         <h2>OH NO! TSHIRT</h2>
         <p>For those who immediately apologize.</p>
         <span class="coming-soon">Coming Soon</span>
       </div>
 
       <div class="product">
-        <img src="images/rings.jpg" alt="3x Rings">
-        <h2>BIG BAD BASS RINGS</h2>
+        <img src="images/necklace.jpg" alt="Necklace">
+        <h2>BIG BAD BASS NECKLACE</h2>
         <p>For those who want to carry the big bad bass with them.</p>
         <span class="coming-soon">Coming Soon</span>
       </div>
@@ -44,6 +48,21 @@
     </div>
 
   </section>
+
+  <script>
+    document.querySelectorAll('.product').forEach(product => {
+      const img = product.querySelector('.tshirt-image');
+      if (!img) return;
+      product.querySelectorAll('.color-swatch').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const color = btn.dataset.color;
+          img.src = img.dataset[color];
+          product.querySelectorAll('.color-swatch').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        });
+      });
+    });
+  </script>
 
 </body>
 </html>
