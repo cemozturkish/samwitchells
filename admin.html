@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>ADMIN</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="admin-page">
+
+  <header class="admin-header">
+    <a href="inspiration.html" class="music-nav">&larr; Back to site</a>
+    <button type="button" class="admin-text-button" id="sign-out" hidden>Sign out</button>
+  </header>
+
+  <main class="admin">
+    <h1 class="inspiration-heading">INSPIRATION ADMIN</h1>
+
+    <p class="admin-message" id="loading">Loading&hellip;</p>
+
+    <!-- Sign in -->
+    <section class="admin-login" id="login" hidden>
+      <p class="admin-lead">Sign in with a GitHub token so this page can save changes to the website. You only need to do this once per device.</p>
+      <ol class="admin-steps">
+        <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub &rarr; new fine-grained token</a>.</li>
+        <li>Give it a name (e.g. <em>samwitchells admin</em>) and choose an expiration.</li>
+        <li>Under <strong>Repository access</strong>, choose <em>Only select repositories</em> and pick <em>samwitchells</em>.</li>
+        <li>Under <strong>Permissions</strong>, add <em>Contents</em> and set it to <em>Read and write</em>.</li>
+        <li>Click <strong>Generate token</strong>, copy it and paste it below.</li>
+      </ol>
+      <form class="admin-login-form" id="login-form">
+        <input type="password" class="admin-input" id="token" placeholder="github_pat_&hellip;" autocomplete="off" spellcheck="false" required>
+        <label class="admin-check"><input type="checkbox" id="remember" checked> Remember me on this device</label>
+        <button type="submit" class="admin-button primary">Sign in</button>
+        <p class="admin-message error" id="login-message" role="alert"></p>
+      </form>
+      <p class="admin-fineprint">The token is kept only in this browser and is only ever sent to GitHub.</p>
+    </section>
+
+    <!-- Editor -->
+    <section id="editor" hidden>
+      <div class="admin-toolbar">
+        <div class="admin-add">
+          <span>Add</span>
+          <button type="button" class="admin-button" data-add="album">Album</button>
+          <button type="button" class="admin-button" data-add="artist">Artist</button>
+          <button type="button" class="admin-button" data-add="performance">Performance</button>
+          <button type="button" class="admin-button" data-add="other">Other</button>
+        </div>
+        <div class="admin-publish">
+          <span class="admin-status" id="status" role="status"></span>
+          <button type="button" class="admin-button" id="discard">Discard</button>
+          <button type="button" class="admin-button primary" id="publish">Publish</button>
+        </div>
+      </div>
+      <p class="admin-hint">Click a card to edit it. Nothing changes on the website until you press Publish.</p>
+
+      <ul class="inspo-grid" id="admin-grid"></ul>
+      <p class="admin-empty" id="admin-empty" hidden>No entries yet. Add an album, artist, performance or anything else above.</p>
+    </section>
+  </main>
+
+  <dialog class="admin-dialog" id="edit-dialog">
+    <form method="dialog" class="admin-form" id="edit-form" novalidate>
+      <h2>EDIT ENTRY</h2>
+
+      <label class="admin-field">Type
+        <select name="type" class="admin-input">
+          <option value="album">Album</option>
+          <option value="artist">Artist</option>
+          <option value="performance">Performance</option>
+          <option value="other">Other</option>
+        </select>
+      </label>
+
+      <label class="admin-field">Title
+        <input name="title" class="admin-input" autocomplete="off">
+      </label>
+
+      <label class="admin-field">Details
+        <input name="subtitle" class="admin-input" autocomplete="off">
+      </label>
+
+      <label class="admin-field">Why it inspires you
+        <textarea name="note" class="admin-input" rows="3"></textarea>
+      </label>
+
+      <div class="admin-image">
+        <div class="admin-image-preview" id="image-preview"></div>
+        <div class="admin-image-buttons">
+          <label class="admin-button">Choose image<input type="file" accept="image/*" id="image-input" hidden></label>
+          <button type="button" class="admin-button" id="image-remove">Remove image</button>
+        </div>
+      </div>
+
+      <label class="admin-field">Link <span class="admin-optional">optional: Spotify, YouTube, anything</span>
+        <input name="link" class="admin-input" inputmode="url" placeholder="https://" autocomplete="off">
+      </label>
+
+      <div class="admin-row">
+        <label class="admin-field">Link text
+          <input name="linkText" class="admin-input" autocomplete="off">
+        </label>
+        <label class="admin-field">Card label
+          <input name="label" class="admin-input" autocomplete="off">
+        </label>
+      </div>
+
+      <div class="admin-dialog-actions">
+        <button type="button" class="admin-button danger" id="delete">Delete</button>
+        <button type="submit" class="admin-button primary">Done</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="inspiration.js"></script>
+  <script>
+    (function () {
+      const OWNER = 'cemozturkish';
+      const REPO = 'samwitchells';
+      const BRANCH = 'main';
+      const DATA_PATH = 'data/inspiration.json';
+      const IMAGE_DIR = 'images/inspiration';
+      const TOKEN_KEY = 'samwitchells-admin-token';
+
+      const $ = function (id) { return document.getElementById(id); };
+      const grid = $('admin-grid');
+      const dialog = $('edit-dialog');
+      const form = $('edit-form');
+      const statusEl = $('status');
+
+      let token = '';
+      let items = [];          // entries being edited
+      let savedJson = '[]\n';  // what is live on the site right now
+      let fileSha = null;      // version of DATA_PATH this page loaded
+      let editing = -1;
+      let busy = false;
+      const previews = {};     // image path -> data URL, for images picked on this page
+      const pending = {};      // image path -> base64 still waiting to be published
+
+      /* ---------- GitHub ---------- */
+
+      function gh(method, path, body) {
+        const headers = { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + token };
+        if (body) headers['Content-Type'] = 'application/json';
+
+        return fetch('https://api.github.com/repos/' + OWNER + '/' + REPO + path, {
+          method: method,
+          headers: headers,
+          body: body ? JSON.stringify(body) : undefined,
+          cache: 'no-store'
+        }).then(function (res) {
+          if (res.status === 404 && method === 'GET') return null;
+          if (res.ok) return res.json();
+          return res.json().catch(function () { return {}; }).then(function (data) {
+            const err = new Error(data.message || ('GitHub error ' + res.status));
+            err.status = res.status;
+            throw err;
+          });
+        });
+      }
+
+      function explain(err) {
+        if (err.status === 401) return 'GitHub did not accept the token. It may have expired, so create a new one and sign in again.';
+        if (err.status === 403) return 'The token is not allowed to save. Make sure Contents is set to "Read and write" for samwitchells.';
+        if (err.status) return 'GitHub said: ' + err.message;
+        return err.message || 'Could not reach GitHub. Check your connection and try again.';
+      }
+
+      function decodeBase64(b64) {
+        const bin = atob(b64.replace(/\s/g, ''));
+        return new TextDecoder().decode(Uint8Array.from(bin, function (c) { return c.charCodeAt(0); }));
+      }
+
+      /* ---------- Entries ---------- */
+
+      function normalize(entry) {
+        const item = {};
+        INSPO_FIELDS.forEach(function (f) { item[f] = entry && entry[f] ? String(entry[f]) : ''; });
+        if (!INSPO_TYPES[item.type]) item.type = 'other';
+        return item;
+      }
+
+      function clean(item) {
+        const out = {};
+        INSPO_FIELDS.forEach(function (f) {
+          let value = item[f].trim();
+          if (f === 'link' && value && !/^https?:\/\//i.test(value)) value = 'https://' + value;
+          if (value) out[f] = value;
+        });
+        return out;
+      }
+
+      function serialize(list) {
+        return JSON.stringify(list.map(clean), null, 2) + '\n';
+      }
+
+      function isDirty() {
+        return serialize(items) !== savedJson;
+      }
+
+      function load() {
+        return gh('GET', '/contents/' + DATA_PATH + '?ref=' + BRANCH).then(function (file) {
+          let data = [];
+          if (file) {
+            try {
+              data = JSON.parse(decodeBase64(file.content));
+            } catch (e) {
+              throw new Error(DATA_PATH + ' is not valid JSON, so it cannot be edited here.');
+            }
+          }
+          fileSha = file ? file.sha : null;
+          items = (Array.isArray(data) ? data : []).map(normalize);
+          savedJson = serialize(items);
+        });
+      }
+
+      /* ---------- Rendering ---------- */
+
+      function button(text, label, onClick) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'admin-button';
+        b.textContent = text;
+        b.setAttribute('aria-label', label);
+        b.addEventListener('click', onClick);
+        return b;
+      }
+
+      function adminCard(item, i) {
+        const shown = Object.assign({}, item, { title: item.title || 'Untitled' });
+        const li = buildInspoCard(shown, previews[item.image]);
+        li.classList.add('admin-card');
+        li.querySelector('.inspo-cover').addEventListener('click', function () { openEditor(i); });
+
+        const controls = document.createElement('div');
+        controls.className = 'admin-card-controls';
+        const earlier = button('←', 'Move earlier', function () { move(i, -1); });
+        const later = button('→', 'Move later', function () { move(i, 1); });
+        earlier.disabled = i === 0;
+        later.disabled = i === items.length - 1;
+        controls.append(button('Edit', 'Edit ' + shown.title, function () { openEditor(i); }), earlier, later);
+        li.appendChild(controls);
+        return li;
+      }
+
+      function renderAll() {
+        grid.textContent = '';
+        items.forEach(function (item, i) { grid.appendChild(adminCard(item, i)); });
+        $('admin-empty').hidden = items.length > 0;
+        changed();
+      }
+
+      function renderCard(i) {
+        grid.children[i].replaceWith(adminCard(items[i], i));
+        changed();
+      }
+
+      function setStatus(text, kind) {
+        statusEl.textContent = text;
+        statusEl.className = 'admin-status' + (kind ? ' ' + kind : '');
+      }
+
+      function refreshButtons() {
+        const dirty = isDirty();
+        $('publish').disabled = busy || !dirty;
+        $('discard').disabled = busy || !dirty;
+        document.querySelectorAll('[data-add]').forEach(function (b) { b.disabled = busy; });
+      }
+
+      function changed() {
+        setStatus(isDirty() ? 'Unpublished changes' : 'Everything is published');
+        refreshButtons();
+      }
+
+      /* ---------- Editing ---------- */
+
+      function move(i, dir) {
+        const j = i + dir;
+        if (j < 0 || j >= items.length) return;
+        const tmp = items[i];
+        items[i] = items[j];
+        items[j] = tmp;
+        renderAll();
+        const again = grid.children[j].querySelectorAll('.admin-card-controls button')[dir < 0 ? 1 : 2];
+        if (!again.disabled) again.focus();
+      }
+
+      function updateHints() {
+        const type = INSPO_TYPES[items[editing].type];
+        form.elements.subtitle.placeholder = type.details;
+        form.elements.label.placeholder = type.label;
+        form.elements.linkText.placeholder = type.linkText;
+      }
+
+      function updateImagePreview() {
+        const preview = $('image-preview');
+        const item = items[editing];
+        const src = previews[item.image] || item.image;
+        preview.textContent = '';
+        if (src) {
+          const img = document.createElement('img');
+          img.src = src;
+          img.alt = '';
+          preview.appendChild(img);
+        } else {
+          preview.textContent = 'No image';
+        }
+        $('image-remove').disabled = !item.image;
+      }
+
+      function openEditor(i) {
+        editing = i;
+        INSPO_FIELDS.forEach(function (f) {
+          if (form.elements[f]) form.elements[f].value = items[i][f];
+        });
+        updateHints();
+        updateImagePreview();
+        dialog.showModal();
+        if (!items[i].title) form.elements.title.focus();
+      }
+
+      form.addEventListener('input', function (e) {
+        const field = e.target.name;
+        if (editing < 0 || !field) return;
+        items[editing][field] = e.target.value;
+        if (field === 'type') updateHints();
+        renderCard(editing);
+      });
+
+      dialog.addEventListener('close', function () { editing = -1; });
+
+      $('delete').addEventListener('click', function () {
+        const title = items[editing].title || 'this entry';
+        if (!confirm('Delete "' + title + '"?')) return;
+        items.splice(editing, 1);
+        dialog.close();
+        renderAll();
+      });
+
+      document.querySelectorAll('[data-add]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          items.push(normalize({ type: b.dataset.add }));
+          renderAll();
+          openEditor(items.length - 1);
+        });
+      });
+
+      /* ---------- Images ---------- */
+
+      function slug(text) {
+        return (text || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'image';
+      }
+
+      // Shrink to at most maxSize px on the long side and save as JPEG
+      function resizeImage(file, maxSize) {
+        return new Promise(function (resolve, reject) {
+          const url = URL.createObjectURL(file);
+          const img = new Image();
+          img.onload = function () {
+            const scale = Math.min(1, maxSize / Math.max(img.naturalWidth, img.naturalHeight));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(img.naturalWidth * scale);
+            canvas.height = Math.round(img.naturalHeight * scale);
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            URL.revokeObjectURL(url);
+            resolve(canvas.toDataURL('image/jpeg', 0.85));
+          };
+          img.onerror = function () {
+            URL.revokeObjectURL(url);
+            reject(new Error('That file could not be opened as an image.'));
+          };
+          img.src = url;
+        });
+      }
+
+      $('image-input').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        const i = editing;
+        e.target.value = '';
+        if (!file || i < 0) return;
+
+        resizeImage(file, 1200).then(function (dataUrl) {
+          const path = IMAGE_DIR + '/' + slug(items[i].title) + '-' + Date.now().toString(36) + '.jpg';
+          previews[path] = dataUrl;
+          pending[path] = dataUrl.split(',')[1];
+          items[i].image = path;
+          if (editing === i) updateImagePreview();
+          renderCard(i);
+        }).catch(function (err) {
+          alert(err.message);
+        });
+      });
+
+      $('image-remove').addEventListener('click', function () {
+        items[editing].image = '';
+        updateImagePreview();
+        renderCard(editing);
+      });
+
+      /* ---------- Publish ---------- */
+
+      function setBusy(value) {
+        busy = value;
+        refreshButtons();
+      }
+
+      function imagesIn(list) {
+        return list.map(function (item) { return item.image; }).filter(Boolean);
+      }
+
+      async function publish() {
+        const untitled = items.findIndex(function (item) { return !item.title.trim(); });
+        if (untitled >= 0) {
+          setStatus('Every entry needs a title.', 'error');
+          openEditor(untitled);
+          return;
+        }
+
+        setBusy(true);
+        setStatus('Publishing…');
+        try {
+          const json = serialize(items);
+          const ref = await gh('GET', '/git/ref/heads/' + BRANCH);
+          if (!ref) throw new Error('Could not find the ' + BRANCH + ' branch.');
+          const head = ref.object.sha;
+
+          const remote = await gh('GET', '/contents/' + DATA_PATH + '?ref=' + head);
+          if ((remote ? remote.sha : null) !== fileSha) {
+            throw new Error('The list was changed somewhere else after this page loaded. Reload the page to get the latest version.');
+          }
+
+          const used = imagesIn(items);
+          const tree = [];
+
+          for (const path of Object.keys(pending)) {
+            if (used.indexOf(path) === -1) continue;
+            const blob = await gh('POST', '/git/blobs', { content: pending[path], encoding: 'base64' });
+            tree.push({ path: path, mode: '100644', type: 'blob', sha: blob.sha });
+          }
+
+          // Delete uploaded images that no entry uses any more
+          const before = imagesIn(JSON.parse(savedJson));
+          const folder = await gh('GET', '/contents/' + IMAGE_DIR + '?ref=' + head);
+          (Array.isArray(folder) ? folder : []).forEach(function (file) {
+            if (before.indexOf(file.path) !== -1 && used.indexOf(file.path) === -1) {
+              tree.push({ path: file.path, mode: '100644', type: 'blob', sha: null });
+            }
+          });
+
+          const dataBlob = await gh('POST', '/git/blobs', { content: json, encoding: 'utf-8' });
+          tree.push({ path: DATA_PATH, mode: '100644', type: 'blob', sha: dataBlob.sha });
+
+          const headCommit = await gh('GET', '/git/commits/' + head);
+          const newTree = await gh('POST', '/git/trees', { base_tree: headCommit.tree.sha, tree: tree });
+          const commit = await gh('POST', '/git/commits', {
+            message: 'Update inspiration from admin',
+            tree: newTree.sha,
+            parents: [head]
+          });
+          await gh('PATCH', '/git/refs/heads/' + BRANCH, { sha: commit.sha });
+
+          fileSha = dataBlob.sha;
+          savedJson = json;
+          Object.keys(pending).forEach(function (path) { delete pending[path]; });
+          setBusy(false);
+          setStatus('Published. The website updates in about a minute.', 'ok');
+        } catch (err) {
+          setBusy(false);
+          setStatus(explain(err), 'error');
+        }
+      }
+
+      $('publish').addEventListener('click', publish);
+
+      $('discard').addEventListener('click', function () {
+        if (!confirm('Throw away all unpublished changes?')) return;
+        items = JSON.parse(savedJson).map(normalize);
+        renderAll();
+      });
+
+      window.addEventListener('beforeunload', function (e) {
+        if (!isDirty()) return;
+        e.preventDefault();
+        e.returnValue = '';
+      });
+
+      /* ---------- Sign in ---------- */
+
+      function readToken() {
+        try {
+          return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY) || '';
+        } catch (e) {
+          return '';
+        }
+      }
+
+      function storeToken(value, remember) {
+        try {
+          localStorage.removeItem(TOKEN_KEY);
+          sessionStorage.removeItem(TOKEN_KEY);
+          if (value) (remember ? localStorage : sessionStorage).setItem(TOKEN_KEY, value);
+        } catch (e) {}
+      }
+
+      function show(section) {
+        $('loading').hidden = section !== 'loading';
+        $('login').hidden = section !== 'login';
+        $('editor').hidden = section !== 'editor';
+        $('sign-out').hidden = section !== 'editor';
+      }
+
+      function start() {
+        show('loading');
+        return gh('GET', '').then(function (repo) {
+          if (!repo) throw new Error('The token cannot see the samwitchells repository. Under Repository access, select samwitchells.');
+          return load();
+        }).then(function () {
+          show('editor');
+          renderAll();
+        });
+      }
+
+      function signedOut(message) {
+        token = '';
+        storeToken('');
+        $('login-message').textContent = message || '';
+        show('login');
+      }
+
+      $('login-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const value = $('token').value.trim();
+        if (!value) return;
+        token = value;
+        start().then(function () {
+          storeToken(value, $('remember').checked);
+          $('token').value = '';
+        }).catch(function (err) {
+          signedOut(explain(err));
+        });
+      });
+
+      $('sign-out').addEventListener('click', function () {
+        if (isDirty() && !confirm('You have unpublished changes. Sign out anyway?')) return;
+        items = [];
+        savedJson = '[]\n';
+        signedOut();
+      });
+
+      token = readToken();
+      if (token) {
+        start().catch(function (err) { signedOut(explain(err)); });
+      } else {
+        signedOut();
+      }
+    })();
+  </script>
+
+</body>
+</html>
