@@ -885,9 +885,6 @@ textarea.admin-input {
 /* Editor */
 
 .admin-toolbar {
-  position: sticky;
-  top: 0;
-  z-index: 5;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -899,7 +896,7 @@ textarea.admin-input {
 }
 
 .admin-add,
-.admin-publish {
+.admin-publish-buttons {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -914,10 +911,49 @@ textarea.admin-input {
   opacity: 0.5;
 }
 
+/* Publish bar, pinned to the bottom of the screen */
+
+#editor {
+  padding-bottom: 90px;
+}
+
+.admin-publish-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px 24px;
+  padding: 14px max(16px, 8vw);
+  background: var(--site-background);
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+}
+
 .admin-status {
-  margin-right: 8px;
-  font-size: 0.85rem;
-  opacity: 0.85;
+  flex: 1 1 280px;
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  opacity: 0.7;
+}
+
+.admin-status.pending,
+.admin-status.ok,
+.admin-status.error {
+  opacity: 1;
+}
+
+.admin-status a {
+  color: inherit;
+  white-space: nowrap;
+}
+
+.admin-publish-buttons .admin-button {
+  padding: 10px 18px;
 }
 
 .admin-hint {
@@ -1035,8 +1071,8 @@ textarea.admin-input {
 }
 
 @media (max-width: 600px) {
-  .admin-toolbar {
-    position: static;
+  #editor {
+    padding-bottom: 130px;
   }
 
   .admin-header {
