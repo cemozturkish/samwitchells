@@ -24,7 +24,7 @@
     <h1 class="inspiration-heading">INSPIRATION</h1>
     <p class="inspiration-tagline">The records, voices and moments behind the sound.</p>
 
-    <div class="inspo-filters" role="group" aria-label="Filter inspiration">
+    <div class="inspo-filters" role="group" aria-label="Filter inspiration" hidden>
       <button type="button" class="inspo-filter active" data-filter="all" aria-pressed="true">All</button>
       <button type="button" class="inspo-filter" data-filter="album" aria-pressed="false">Albums</button>
       <button type="button" class="inspo-filter" data-filter="artist" aria-pressed="false">Artists</button>
@@ -32,110 +32,58 @@
       <button type="button" class="inspo-filter" data-filter="other" aria-pressed="false">Other</button>
     </div>
 
-    <!--
-      TO ADD AN INSPIRATION, copy one <li> block below and edit it.
+    <!-- Cards come from data/inspiration.json. Edit them at admin.html. -->
+    <ul class="inspo-grid"></ul>
 
-      data-type    album, artist, performance or other (controls the filter buttons)
-      inspo-type   the small label shown on the card, e.g. Album, Artist, Live, Film, Book
-      image        optional. Upload a picture to images/ and put it inside inspo-cover:
-                     <img src="images/your-picture.jpg" alt="Album cover">
-                   Without an image the card shows a chrome placeholder.
-      link         optional. Add a line like:
-                     <a class="inspo-link" href="https://..." target="_blank" rel="noopener">Listen</a>
-    -->
-    <ul class="inspo-grid">
-
-      <li class="inspo" data-type="album">
-        <div class="inspo-cover"></div>
-        <span class="inspo-type">Album</span>
-        <h2 class="inspo-title">ALBUM TITLE</h2>
-        <p class="inspo-by">Artist Name · Year</p>
-        <p class="inspo-note">A few words on why this record stays with you go here.</p>
-      </li>
-
-      <li class="inspo" data-type="album">
-        <div class="inspo-cover"></div>
-        <span class="inspo-type">Album</span>
-        <h2 class="inspo-title">ALBUM TITLE</h2>
-        <p class="inspo-by">Artist Name · Year</p>
-        <p class="inspo-note">A few words on why this record stays with you go here.</p>
-      </li>
-
-      <li class="inspo" data-type="album">
-        <div class="inspo-cover"></div>
-        <span class="inspo-type">Album</span>
-        <h2 class="inspo-title">ALBUM TITLE</h2>
-        <p class="inspo-by">Artist Name · Year</p>
-        <p class="inspo-note">A few words on why this record stays with you go here.</p>
-      </li>
-
-      <li class="inspo" data-type="artist">
-        <div class="inspo-cover"></div>
-        <span class="inspo-type">Artist</span>
-        <h2 class="inspo-title">ARTIST NAME</h2>
-        <p class="inspo-by">Genre · Hometown</p>
-        <p class="inspo-note">What you took from them goes here.</p>
-      </li>
-
-      <li class="inspo" data-type="artist">
-        <div class="inspo-cover"></div>
-        <span class="inspo-type">Artist</span>
-        <h2 class="inspo-title">ARTIST NAME</h2>
-        <p class="inspo-by">Genre · Hometown</p>
-        <p class="inspo-note">What you took from them goes here.</p>
-      </li>
-
-      <li class="inspo" data-type="performance">
-        <div class="inspo-cover"></div>
-        <span class="inspo-type">Live</span>
-        <h2 class="inspo-title">PERFORMANCE</h2>
-        <p class="inspo-by">Artist Name · Venue, Year</p>
-        <p class="inspo-note">The moment that got you goes here.</p>
-      </li>
-
-      <li class="inspo" data-type="performance">
-        <div class="inspo-cover"></div>
-        <span class="inspo-type">Live</span>
-        <h2 class="inspo-title">PERFORMANCE</h2>
-        <p class="inspo-by">Artist Name · Venue, Year</p>
-        <p class="inspo-note">The moment that got you goes here.</p>
-      </li>
-
-      <li class="inspo" data-type="other">
-        <div class="inspo-cover"></div>
-        <span class="inspo-type">Film</span>
-        <h2 class="inspo-title">TITLE</h2>
-        <p class="inspo-by">Director · Year</p>
-        <p class="inspo-note">Films, books, places, anything else goes here.</p>
-      </li>
-
-    </ul>
+    <p class="inspo-empty" hidden><span class="coming-soon">Coming Soon</span></p>
   </section>
 
+  <script src="inspiration.js"></script>
   <script>
     (function () {
-      const items = document.querySelectorAll('.inspo');
+      const grid = document.querySelector('.inspo-grid');
+      const filterBar = document.querySelector('.inspo-filters');
       const filters = document.querySelectorAll('.inspo-filter');
 
-      filters.forEach(function (btn) {
-        const type = btn.dataset.filter;
+      function setUpFilters() {
+        const items = grid.querySelectorAll('.inspo');
 
-        // Hide filters that have nothing to show yet
-        if (type !== 'all' && !document.querySelector('.inspo[data-type="' + type + '"]')) {
-          btn.hidden = true;
-          return;
-        }
+        filters.forEach(function (btn) {
+          const type = btn.dataset.filter;
 
-        btn.addEventListener('click', function () {
-          filters.forEach(function (b) {
-            b.classList.toggle('active', b === btn);
-            b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
-          });
-          items.forEach(function (item) {
-            item.hidden = type !== 'all' && item.dataset.type !== type;
+          // Hide filters that have nothing to show yet
+          if (type !== 'all' && !grid.querySelector('.inspo[data-type="' + type + '"]')) {
+            btn.hidden = true;
+            return;
+          }
+
+          btn.addEventListener('click', function () {
+            filters.forEach(function (b) {
+              b.classList.toggle('active', b === btn);
+              b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+            });
+            items.forEach(function (item) {
+              item.hidden = type !== 'all' && item.dataset.type !== type;
+            });
           });
         });
-      });
+
+        filterBar.hidden = false;
+      }
+
+      fetch('data/inspiration.json', { cache: 'no-cache' })
+        .then(function (res) { return res.ok ? res.json() : []; })
+        .catch(function () { return []; })
+        .then(function (entries) {
+          if (!Array.isArray(entries) || !entries.length) {
+            document.querySelector('.inspo-empty').hidden = false;
+            return;
+          }
+          entries.forEach(function (entry) {
+            grid.appendChild(buildInspoCard(entry));
+          });
+          setUpFilters();
+        });
     })();
   </script>
 
