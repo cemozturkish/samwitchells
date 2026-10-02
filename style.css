@@ -59,6 +59,20 @@ nav a {
   color: white;
 }
 
+/* Text Links (Top Left) */
+
+.nav-links {
+  display: flex;
+  gap: 28px;
+}
+
+@media (max-width: 480px) {
+  .nav-links {
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+
 /* Music Button (Top Left) */
 
 .music-nav {
@@ -168,6 +182,12 @@ nav a {
   width: 100%;
   max-width: 1100px;
   min-height: 0;
+}
+
+@media (max-width: 480px) {
+  .merch {
+    padding-top: 110px;
+  }
 }
 
 .product {
@@ -394,4 +414,288 @@ nav a {
 .annotated:hover::after {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* ===================== */
+/* INSPIRATION PAGE STYLES */
+/* ===================== */
+
+.inspiration {
+  --chrome: linear-gradient(135deg, #f4f4f8 0%, #8d8e96 22%, #fdfdff 38%, #5c5d64 55%, #e6e6ec 72%, #7a7b83 100%);
+  box-sizing: border-box;
+  padding: 110px 8vw 80px;
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.inspiration-heading {
+  font-size: 2rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  margin: 0;
+}
+
+.inspiration-tagline {
+  margin: 8px 0 32px;
+  font-style: italic;
+  opacity: 0.7;
+}
+
+/* Filters */
+
+.inspo-filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 56px;
+}
+
+.inspo-filter {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--site-foreground);
+  font-family: inherit;
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.2s ease, border-color 0.2s ease;
+}
+
+.inspo-filter:hover {
+  opacity: 1;
+}
+
+.inspo-filter.active {
+  opacity: 1;
+  border-color: var(--site-foreground);
+}
+
+.inspo-filter[hidden] {
+  display: none;
+}
+
+/* Grid */
+
+.inspo-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 56px 32px;
+  text-align: left;
+}
+
+.inspo {
+  display: flex;
+  flex-direction: column;
+  animation: inspo-in 0.4s ease both;
+}
+
+.inspo[hidden] {
+  display: none;
+}
+
+@keyframes inspo-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Cover */
+
+.inspo-cover {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  margin-bottom: 18px;
+  overflow: hidden;
+  background: #0b0b0b;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: border-color 0.3s ease, transform 0.3s ease;
+}
+
+.inspo:hover .inspo-cover {
+  border-color: rgba(255, 255, 255, 0.6);
+  transform: translateY(-4px);
+}
+
+.inspo-cover img {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.inspo:hover .inspo-cover img {
+  transform: scale(1.04);
+}
+
+.inspo-cover::before,
+.inspo-cover::after {
+  content: "";
+  position: absolute;
+}
+
+/* Placeholder: album = chrome-label vinyl */
+
+.inspo[data-type="album"] .inspo-cover::before {
+  inset: 12%;
+  border-radius: 50%;
+  background:
+    conic-gradient(from 20deg, transparent 0 8%, rgba(255, 255, 255, 0.2) 13%, transparent 19% 50%, rgba(255, 255, 255, 0.16) 63%, transparent 69%),
+    repeating-radial-gradient(circle, #0c0c0c 0 1.5px, #1c1c1c 1.5px 3px);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 20px 40px rgba(0, 0, 0, 0.6);
+}
+
+.inspo[data-type="album"] .inspo-cover::after {
+  inset: 38%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, #000 0 9%, transparent 10%),
+    var(--chrome);
+}
+
+.inspo[data-type="album"]:hover .inspo-cover::before {
+  animation: inspo-spin 4s linear infinite;
+}
+
+@keyframes inspo-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Placeholder: artist = chrome silhouette in a round frame */
+
+.inspo[data-type="artist"] .inspo-cover {
+  border-radius: 50%;
+}
+
+.inspo[data-type="artist"] .inspo-cover::before {
+  inset: 0;
+  background: var(--chrome);
+  opacity: 0.85;
+  -webkit-mask:
+    radial-gradient(circle at 50% 40%, #000 0 15%, transparent 15.5%),
+    radial-gradient(ellipse 32% 28% at 50% 92%, #000 0 98%, transparent 100%);
+  mask:
+    radial-gradient(circle at 50% 40%, #000 0 15%, transparent 15.5%),
+    radial-gradient(ellipse 32% 28% at 50% 92%, #000 0 98%, transparent 100%);
+}
+
+/* Placeholder: performance = figure under a spotlight */
+
+.inspo[data-type="performance"] .inspo-cover::before {
+  inset: 0;
+  background:
+    radial-gradient(ellipse 30% 6% at 50% 86%, rgba(255, 255, 255, 0.45), transparent 70%),
+    conic-gradient(from 160deg at 50% -10%, transparent 0deg, rgba(255, 255, 255, 0.22) 14deg, rgba(255, 255, 255, 0.22) 26deg, transparent 40deg);
+}
+
+.inspo[data-type="performance"] .inspo-cover::after {
+  inset: 0 0 14%;
+  background: var(--chrome);
+  -webkit-mask:
+    radial-gradient(circle at 50% 70%, #000 0 4.5%, transparent 5%),
+    radial-gradient(ellipse 10% 22% at 50% 100%, #000 0 98%, transparent 100%);
+  mask:
+    radial-gradient(circle at 50% 70%, #000 0 4.5%, transparent 5%),
+    radial-gradient(ellipse 10% 22% at 50% 100%, #000 0 98%, transparent 100%);
+}
+
+/* Placeholder: other = brushed chrome star */
+
+.inspo[data-type="other"] .inspo-cover::before {
+  inset: 0;
+  background: repeating-linear-gradient(104deg, rgba(255, 255, 255, 0.05) 0 2px, transparent 2px 6px);
+}
+
+.inspo[data-type="other"] .inspo-cover::after {
+  inset: 24%;
+  background: var(--chrome);
+  clip-path: polygon(50% 0, 56% 44%, 100% 50%, 56% 56%, 50% 100%, 44% 56%, 0 50%, 44% 44%);
+  transition: transform 0.6s ease;
+}
+
+.inspo[data-type="other"]:hover .inspo-cover::after {
+  transform: rotate(45deg);
+}
+
+/* Card text */
+
+.inspo-type {
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0.5;
+  margin-bottom: 6px;
+}
+
+.inspo-title {
+  margin: 0 0 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.inspo-by {
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.inspo-note {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.9rem;
+  font-style: italic;
+  line-height: 1.6;
+  opacity: 0.85;
+}
+
+.inspo-link {
+  align-self: flex-start;
+  margin-top: 12px;
+  color: var(--site-foreground);
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+  transition: border-color 0.2s ease;
+}
+
+.inspo-link::after {
+  content: " \2197";
+}
+
+.inspo-link:hover {
+  border-bottom-color: var(--site-foreground);
+}
+
+@media (max-width: 600px) {
+  .inspo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 40px 18px;
+  }
+
+  .inspo-title {
+    font-size: 0.9rem;
+  }
+
+  .inspo-note {
+    font-size: 0.82rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inspo,
+  .inspo[data-type="album"]:hover .inspo-cover::before {
+    animation: none;
+  }
 }
