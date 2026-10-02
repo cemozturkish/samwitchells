@@ -27,9 +27,10 @@
         <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub &rarr; new fine-grained token</a>.</li>
         <li>Give it a name (e.g. <em>samwitchells admin</em>) and choose an expiration.</li>
         <li>Under <strong>Repository access</strong>, choose <em>Only select repositories</em> and pick <em>samwitchells</em>.</li>
-        <li>Under <strong>Permissions</strong>, add <em>Contents</em> and set it to <em>Read and write</em>.</li>
+        <li>Under <strong>Permissions</strong>, add <em>Contents</em> and change it from <em>Read-only</em> to <strong>Read and write</strong>.</li>
         <li>Click <strong>Generate token</strong>, copy it and paste it below.</li>
       </ol>
+      <p class="admin-lead">Already made a token? Open it on <a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noopener">your tokens page</a> and check steps 3 and 4, or just make a new one.</p>
       <form class="admin-login-form" id="login-form">
         <input type="password" class="admin-input" id="token" placeholder="github_pat_&hellip;" autocomplete="off" spellcheck="false" required>
         <label class="admin-check"><input type="checkbox" id="remember" checked> Remember me on this device</label>
@@ -49,16 +50,19 @@
           <button type="button" class="admin-button" data-add="performance">Performance</button>
           <button type="button" class="admin-button" data-add="other">Other</button>
         </div>
-        <div class="admin-publish">
-          <span class="admin-status" id="status" role="status"></span>
-          <button type="button" class="admin-button" id="discard">Discard</button>
-          <button type="button" class="admin-button primary" id="publish">Publish</button>
-        </div>
       </div>
       <p class="admin-hint">Click a card to edit it. Nothing changes on the website until you press Publish.</p>
 
       <ul class="inspo-grid" id="admin-grid"></ul>
       <p class="admin-empty" id="admin-empty" hidden>No entries yet. Add an album, artist, performance or anything else above.</p>
+
+      <div class="admin-publish-bar">
+        <p class="admin-status" id="status" role="status"></p>
+        <div class="admin-publish-buttons">
+          <button type="button" class="admin-button" id="discard">Discard</button>
+          <button type="button" class="admin-button primary" id="publish">Publish</button>
+        </div>
+      </div>
     </section>
   </main>
 
@@ -137,6 +141,7 @@
       let fileSha = null;      // version of DATA_PATH this page loaded
       let editing = -1;
       let busy = false;
+      let liveCheck = 0;       // bumped to cancel an in-progress wait for the site to update
       const previews = {};     // image path -> data URL, for images picked on this page
       const pending = {};      // image path -> base64 still waiting to be published
 
@@ -162,9 +167,13 @@
         });
       }
 
+      const CANNOT_SAVE = 'This token can read the website but is not allowed to save changes. ' +
+        'In the token\u2019s settings on GitHub, select samwitchells under Repository access and set Contents to ' +
+        '\u201cRead and write\u201d (not Read-only). Then sign in again.';
+
       function explain(err) {
         if (err.status === 401) return 'GitHub did not accept the token. It may have expired, so create a new one and sign in again.';
-        if (err.status === 403) return 'The token is not allowed to save. Make sure Contents is set to "Read and write" for samwitchells.';
+        if (err.status === 403) return CANNOT_SAVE;
         if (err.status) return 'GitHub said: ' + err.message;
         return err.message || 'Could not reach GitHub. Check your connection and try again.';
       }
@@ -258,9 +267,17 @@
         changed();
       }
 
-      function setStatus(text, kind) {
+      function setStatus(text, kind, linkText) {
         statusEl.textContent = text;
         statusEl.className = 'admin-status' + (kind ? ' ' + kind : '');
+        if (linkText) {
+          const a = document.createElement('a');
+          a.href = 'inspiration.html';
+          a.target = '_blank';
+          a.rel = 'noopener';
+          a.textContent = linkText;
+          statusEl.append(' ', a);
+        }
       }
 
       function refreshButtons() {
@@ -271,7 +288,12 @@
       }
 
       function changed() {
-        setStatus(isDirty() ? 'Unpublished changes' : 'Everything is published');
+        if (isDirty()) {
+          liveCheck++;
+          setStatus('You have unpublished changes. Press Publish to put them on the website.', 'pending');
+        } else {
+          setStatus('No unpublished changes.');
+        }
         refreshButtons();
       }
 
@@ -470,11 +492,35 @@
           savedJson = json;
           Object.keys(pending).forEach(function (path) { delete pending[path]; });
           setBusy(false);
-          setStatus('Published. The website updates in about a minute.', 'ok');
+          setStatus('Saved. Waiting for the website to update\u2026 this usually takes under a minute.', 'pending');
+          waitForLive(json);
         } catch (err) {
           setBusy(false);
           setStatus(explain(err), 'error');
         }
+      }
+
+      // Poll the live site until it serves what was just published
+      function waitForLive(json) {
+        const id = ++liveCheck;
+        const started = Date.now();
+
+        (function poll() {
+          if (id !== liveCheck) return;
+          fetch(DATA_PATH + '?v=' + Date.now(), { cache: 'no-store' })
+            .then(function (res) { return res.ok ? res.text() : ''; })
+            .catch(function () { return ''; })
+            .then(function (text) {
+              if (id !== liveCheck) return;
+              if (text.trim() === json.trim()) {
+                setStatus('Live on the website.', 'ok', 'View the page');
+              } else if (Date.now() - started > 5 * 60 * 1000) {
+                setStatus('Saved, but the website is taking longer than usual to update. Check again in a few minutes.', 'pending', 'View the page');
+              } else {
+                setTimeout(poll, 5000);
+              }
+            });
+        })();
       }
 
       $('publish').addEventListener('click', publish);
@@ -520,8 +566,12 @@
         show('loading');
         return gh('GET', '').then(function (repo) {
           if (!repo) throw new Error('The token cannot see the samwitchells repository. Under Repository access, select samwitchells.');
-          return load();
-        }).then(function () {
+          // Saving a tiny unused blob proves the token can write, without changing any files
+          return gh('POST', '/git/blobs', { content: 'samwitchells admin check\n', encoding: 'utf-8' }).catch(function (err) {
+            if (err.status === 403 || err.status === 404 || err.status === 422) throw new Error(CANNOT_SAVE);
+            throw err;
+          });
+        }).then(load).then(function () {
           show('editor');
           renderAll();
         });

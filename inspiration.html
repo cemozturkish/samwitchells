@@ -71,7 +71,7 @@
         filterBar.hidden = false;
       }
 
-      fetch('data/inspiration.json', { cache: 'no-cache' })
+      fetch('data/inspiration.json?v=' + Date.now(), { cache: 'no-store' })
         .then(function (res) { return res.ok ? res.json() : []; })
         .catch(function () { return []; })
         .then(function (entries) {
