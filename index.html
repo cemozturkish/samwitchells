@@ -2,123 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="description" content="Sam Witchells">
   <title>SAM WITCHELLS</title>
 
-  <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png">
-
-  <!-- External CSS -->
-  <link rel="stylesheet" href="style.css">
+  <link rel="preload" as="image" href="assets/logo.webp">
+  <link rel="stylesheet" href="home.css">
 </head>
 
-<body class="home-page">
+<body>
 
-  <nav>
-    <div class="nav-links">
-      <a href="music.html" class="music-nav">Music</a>
-      <a href="inspiration.html" class="music-nav">Inspiration</a>
-    </div>
+  <main class="stage">
+    <h1 class="logo" id="logo">
+      <img class="logo-still" src="assets/logo.webp" width="2048" height="1024" alt="Sam Witchells" draggable="false">
+      <canvas class="logo-live" aria-hidden="true"></canvas>
+    </h1>
+  </main>
 
-    <a href="merch.html" class="merch-nav">
-      <img src="images/merch-button.png" alt="Merch">
-    </a>
-  </nav>
+  <button class="tilt-hint" id="tilt-hint" type="button" hidden>Tap, then tilt your phone</button>
 
-  <section class="home">
-    <div class="silver-logo" aria-label="SAM WITCHELLS">
-      <svg class="silver-logo-art" viewBox="0 0 1774 887" role="img" aria-labelledby="silver-logo-title">
-        <title id="silver-logo-title">SAM WITCHELLS silver logo</title>
-        <defs>
-          <mask id="logo-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="1774" height="887" style="mask-type: luminance;">
-            <rect width="1774" height="887" fill="black" />
-            <image href="background.png" width="1774" height="887" preserveAspectRatio="xMidYMid meet" />
-          </mask>
-
-          <pattern id="silver-brush" patternUnits="userSpaceOnUse" width="16" height="16" patternTransform="rotate(14)">
-            <rect width="16" height="16" fill="#ffffff" fill-opacity="0" />
-            <rect width="2" height="16" fill="#ffffff" fill-opacity="0.55" />
-            <rect x="4" width="1.5" height="16" fill="#000000" fill-opacity="0.14" />
-          </pattern>
-
-          <radialGradient id="silver-shine" cx="50%" cy="45%" r="34%">
-            <stop offset="0%" stop-color="#ffffff" stop-opacity="1" />
-            <stop offset="18%" stop-color="#f5f5ff" stop-opacity="0.95" />
-            <stop offset="42%" stop-color="#bfc0ca" stop-opacity="0.32" />
-            <stop offset="64%" stop-color="#000000" stop-opacity="0" />
-            <stop offset="100%" stop-color="#000000" stop-opacity="0" />
-          </radialGradient>
-        </defs>
-
-        <image href="background.png" width="1774" height="887" preserveAspectRatio="xMidYMid meet" />
-        <g mask="url(#logo-mask)">
-          <rect class="silver-logo-brushed" width="1774" height="887" fill="url(#silver-brush)" />
-          <rect width="1774" height="887" fill="url(#silver-shine)" />
-        </g>
-      </svg>
-    </div>
-  </section>
-
-  <script>
-    (function () {
-      const logo = document.querySelector('.silver-logo');
-      if (!logo) return;
-
-      const MAX_SHIFT = 8;
-      const SMOOTHING = 0.1;
-      const WIGGLE_DELAY = 30;
-      let targetShiftX = 0, targetShiftY = 0;
-      let currentShiftX = 0, currentShiftY = 0;
-      let rafId = null;
-      let wiggleTimeout = null;
-      let pendingPoint = null;
-
-      function render() {
-        currentShiftX += (targetShiftX - currentShiftX) * SMOOTHING;
-        currentShiftY += (targetShiftY - currentShiftY) * SMOOTHING;
-        logo.style.transform = `translate(${currentShiftX}px, ${currentShiftY}px)`;
-
-        const isMoving =
-          Math.abs(targetShiftX - currentShiftX) > 0.05 ||
-          Math.abs(targetShiftY - currentShiftY) > 0.05;
-
-        rafId = isMoving ? requestAnimationFrame(render) : null;
-      }
-
-      function updateLogoLighting(clientX, clientY) {
-        const viewportX = (clientX / window.innerWidth) * 2 - 1;
-        const viewportY = (clientY / window.innerHeight) * 2 - 1;
-        targetShiftX = -viewportX * MAX_SHIFT;
-        targetShiftY = -viewportY * MAX_SHIFT;
-
-        if (!rafId) rafId = requestAnimationFrame(render);
-      }
-
-      function queueLogoLighting(clientX, clientY) {
-        pendingPoint = { clientX, clientY };
-
-        if (wiggleTimeout) return;
-
-        wiggleTimeout = window.setTimeout(function () {
-          wiggleTimeout = null;
-          if (!pendingPoint) return;
-
-          const point = pendingPoint;
-          pendingPoint = null;
-          updateLogoLighting(point.clientX, point.clientY);
-        }, WIGGLE_DELAY);
-      }
-
-      window.addEventListener('mousemove', function (e) {
-        queueLogoLighting(e.clientX, e.clientY);
-      });
-
-      window.addEventListener('touchmove', function (e) {
-        if (!e.touches.length) return;
-        queueLogoLighting(e.touches[0].clientX, e.touches[0].clientY);
-      }, { passive: true });
-    })();
-  </script>
+  <script src="logo.js" defer></script>
 
 </body>
 </html>
