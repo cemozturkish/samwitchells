@@ -1,5 +1,6 @@
 /* Silver logo: a small WebGL renderer that treats the flat logo artwork as a
-   piece of polished metal and moves a light across it.
+   piece of polished metal resting just above a dark surface, and moves a
+   light across it.
 
    Desktop: the light is the mouse.
    Phone:   the light moves as the phone tilts (touch works too).
@@ -7,6 +8,8 @@
    Textures come from _tools/build_logo_maps.py:
      assets/logo.webp         the artwork on black
      assets/logo-relief.webp  R,G = surface normal, B = where the metal is
+     assets/logo-depth.webp   R,G = the logo's shadow (tight, wide), B = thick
+                              letter bodies as opposed to the thin rim wire
 
    If WebGL is missing the plain <img> simply stays on screen. */
 (function () {
@@ -14,7 +17,8 @@
 
   var logo = document.getElementById('logo');
   if (!logo) return;
-  var canvas = logo.querySelector('canvas');
+  var stage = logo.parentNode;
+  var canvas = stage.querySelector('canvas');   // covers the whole screen
   var hint = document.getElementById('tilt-hint');
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var isHandheld = window.matchMedia('(hover: none) and (pointer: coarse)').matches;   // phones, tablets
@@ -32,26 +36,48 @@
     '}'
   ].join('\n');
 
-  // Lights the metal. uGlint = 0 draws the picture, uGlint = 1 draws only the
-  // energy of the brightest highlights, which is then blurred into the glow.
+  // Draws the whole screen: the dark surface with its pool of light and the
+  // logo's shadow, and the metal on top. uGlint = 0 draws the picture,
+  // uGlint = 1 draws only the energy of the brightest highlights, which is
+  // then blurred into the glow.
   var SCENE = [
     'precision highp float;',
-    'varying vec2 vUv;',
+    'varying vec2 vUv;',      // 0..1 across the screen, y down
     'uniform sampler2D uLogo;',
     'uniform sampler2D uRelief;',
-    'uniform vec3 uLight;',   // x 0..2, y 0..1 (image space), z = height above the metal
+    'uniform sampler2D uDepth;',
+    'uniform vec2 uView;',    // screen size, css px
+    'uniform vec3 uBox;',     // logo centre x, y and height, css px
+    'uniform vec2 uLean;',    // how far the piece leans back at the bottom / right, radians
+    'uniform float uPersp;',  // viewing distance, in logo heights
+    'uniform vec3 uLight;',   // x 0..2, y 0..1 (logo space), z = height above the metal
     'uniform float uGain;',   // 0..1 fade-in
     'uniform float uGlint;',
     '',
+    'const float GAP = 0.07;',  // how far the metal floats above the surface, in logo heights
+    '',
     'void main() {',
-    '  vec3 base = texture2D(uLogo, vUv).rgb;',
-    '  vec4 rel = texture2D(uRelief, vUv);',
+    // Where this pixel is, in logo heights from the centre of the piece.
+    '  vec2 s = (vUv * uView - uBox.xy) / uBox.z;',
+    '',
+    // The piece leans a few degrees: find where the eye ray meets its plane.
+    '  float sa = sin(uLean.x), ca = cos(uLean.x), sb = sin(uLean.y), cb = cos(uLean.y);',
+    '  vec3 ex = vec3(cb, 0.0, -sb), ey = vec3(0.0, ca, -sa), pn = vec3(sb * ca, cb * sa, cb * ca);',
+    '  float hit = pn.z * uPersp / (pn.z * uPersp - pn.x * s.x - pn.y * s.y);',
+    '  vec3 onPlane = vec3(hit * s, uPersp * (1.0 - hit));',
+    '  vec2 uv = vec2(dot(ex, onPlane) * 0.5 + 0.5, dot(ey, onPlane) + 0.5);',
+    '  float inside = step(0.0, uv.x) * step(uv.x, 1.0) * step(0.0, uv.y) * step(uv.y, 1.0);',
+    '',
+    '  vec3 base = texture2D(uLogo, uv).rgb * inside;',
+    '  vec4 rel = texture2D(uRelief, uv);',
+    '  vec3 dep = texture2D(uDepth, uv).rgb * inside;',
     '  vec2 g = rel.rg * 2.0 - 1.0;',
     '  vec3 N = normalize(vec3(g * 1.35, sqrt(max(1.0 - dot(g, g), 0.0))));',
     '  float lum = dot(base, vec3(0.299, 0.587, 0.114));',
-    '  float metal = rel.b * smoothstep(0.015, 0.16, lum);',
+    '  float solid = rel.b * inside;',
+    '  float metal = solid * smoothstep(0.015, 0.16, lum);',
     '',
-    '  vec3 P = vec3(vUv.x * 2.0, vUv.y, 0.0);',
+    '  vec3 P = vec3(uv.x * 2.0, uv.y, 0.0);',
     '  vec3 toL = uLight - P;',
     '  float d2 = dot(toL, toL);',
     '  vec3 L = toL * inversesqrt(d2);',
@@ -66,6 +92,12 @@
     '  float pool = clamp(near * wrap * 1.15, 0.0, 1.0);',
     '  vec3 col = mix(pow(base, vec3(1.2)) * 0.74, pow(base, vec3(1.45)) * 1.0, pool);',
     '',
+    // The hair-thin wire around the rim: left as bright as the letters it reads
+    // as an outline drawn round the logo, so it stays quiet until the lamp
+    // comes near and then catches the light like the rest.
+    '  float wire = metal * (1.0 - dep.b);',
+    '  col *= 1.0 - wire * (0.74 - 0.34 * pool);',
+    '',
     // Mirror reflection of the lamp itself, worked out in "how far is this
     // facet from facing the lamp" space. Hard-edged shapes are what make it
     // read as polished metal rather than plastic: a softbox, a thin strip
@@ -76,7 +108,7 @@
     '  float sheen = pow(ndh, 30.0);',
     '  float spark = pow(ndh, 600.0);',
     '  vec3 tint = vec3(0.93, 0.96, 1.0);',
-    '  float energy = metal * far * (0.85 * box + 0.4 * strip + 0.06 * sheen + 1.4 * spark);',
+    '  float energy = metal * far * (1.0 - 0.45 * wire) * (0.85 * box + 0.4 * strip + 0.06 * sheen + 1.4 * spark);',
     // Liquid banding: alternating bright and dark reflections that slide over
     // the curves as the lamp moves.
     '  float r = length(dv);',
@@ -93,9 +125,33 @@
     '    gl_FragColor = vec4(tint * clamp(hot - 0.12, 0.0, 1.0), clamp(star * 2.0 - 0.25, 0.0, 1.0)) * uGain;',
     '    return;',
     '  }',
+    '',
+    // The channel between each letter and its rim wire is pure black in the
+    // artwork. Treat it as the recessed back of one solid piece: dark metal
+    // that picks up a little light, so the rim belongs to the object.
+    '  float recess = smoothstep(0.62, 0.86, dep.r) * (1.0 - solid);',
+    '  col += vec3(0.050, 0.053, 0.060) * recess * (0.3 + 2.2 * pool);',
+    '',
+    // The surface behind: black until the lamp is near, then a soft pool of
+    // light with the shadow of the piece falling away from the lamp.
+    '  vec2 Ls = vec2(uLight.x - 1.0, uLight.y - 0.5);',
+    '  vec2 dS = s - Ls;',
+    '  float lz = uLight.z + GAP;',
+    '  float sd2 = dot(dS, dS) + lz * lz;',
+    '  float lit = 0.15 * lz * inversesqrt(sd2) / (1.0 + sd2 * 2.4);',
+    '  vec2 caster = s - dS * (GAP / lz);',   // the point of the piece between here and the lamp
+    '  vec3 shade = texture2D(uDepth, vec2(caster.x * 0.5 + 0.5, caster.y + 0.5)).rgb;',
+    '  float shadow = mix(shade.r, shade.g, clamp(length(dS) * 0.9, 0.0, 1.0));',
+    '  lit *= (1.0 - 0.92 * shadow) * (1.0 - 0.3 * dep.g);',
+    '  float cover = clamp(solid + recess, 0.0, 1.0);',
+    '  col += vec3(0.90, 0.94, 1.0) * lit * (1.0 - cover);',
+    '',
     // Soft shoulder so the brightest metal rolls off to white instead of clipping.
     '  col = mix(col, 0.86 + 0.14 * (1.0 - exp(-(col - 0.86) * 4.0)), step(0.86, col));',
-    '  gl_FragColor = vec4(col * uGain, 1.0);',
+    // Dither, so the faint pool of light never shows steps on the black.
+    '  float n1 = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));',
+    '  float n2 = fract(52.9829189 * fract(dot(gl_FragCoord.xy + 47.0, vec2(0.00583715, 0.06711056))));',
+    '  gl_FragColor = vec4(col * uGain + (n1 + n2 - 1.0) / 255.0, 1.0);',
     '}'
   ].join('\n');
 
@@ -232,7 +288,7 @@
     });
     if (!gl) return false;
 
-    prog.scene = program(SCENE, ['uLogo', 'uRelief', 'uLight', 'uGain', 'uGlint']);
+    prog.scene = program(SCENE, ['uLogo', 'uRelief', 'uDepth', 'uView', 'uBox', 'uLean', 'uPersp', 'uLight', 'uGain', 'uGlint']);
     prog.blur = program(BLUR, ['uTex', 'uStep']);
     prog.glow = program(GLOW, ['uSoft', 'uWide', 'uStarH', 'uStarV']);
 
@@ -260,15 +316,21 @@
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
-  function draw(lx, ly, lz, gain) {
+  function draw(lx, ly, lz, leanX, leanY, gain) {
     var t = targets;
 
-    // 1. the metal
+    // 1. the surface and the metal
     gl.useProgram(prog.scene.id);
     bind(0, tex.logo);
     bind(1, tex.relief);
+    bind(2, tex.depth);
     gl.uniform1i(prog.scene.uLogo, 0);
     gl.uniform1i(prog.scene.uRelief, 1);
+    gl.uniform1i(prog.scene.uDepth, 2);
+    gl.uniform2f(prog.scene.uView, box.vw, box.vh);
+    gl.uniform3f(prog.scene.uBox, box.cx, box.cy, box.h);
+    gl.uniform2f(prog.scene.uLean, leanX, leanY);
+    gl.uniform1f(prog.scene.uPersp, 1400 / box.h);
     gl.uniform3f(prog.scene.uLight, lx, ly, lz);
     gl.uniform1f(prog.scene.uGain, gain);
 
@@ -322,21 +384,28 @@
   /* Sizing                                                              */
   /* ------------------------------------------------------------------ */
 
-  var box = { cx: 0, cy: 0, w: 1, h: 1 };
+  var box = { cx: 0, cy: 0, w: 1, h: 1, vw: 1, vh: 1 };   // css px
   var needsDraw = true;
+  var quality = 1;          // resolution multiplier, lowered if frames run slow
+  var slow = { ms: 16, frames: 0 };
 
   function measure() {
-    // Layout size, ignoring the 3D tilt, centred on the viewport like the stage.
+    // The canvas fills the screen; the logo element only says where the piece
+    // sits and how big it is.
+    box.vw = stage.clientWidth || 1;
+    box.vh = stage.clientHeight || 1;
     box.w = logo.offsetWidth || 1;
     box.h = logo.offsetHeight || 1;
-    box.cx = window.innerWidth / 2;
-    box.cy = window.innerHeight / 2;
+    box.cx = box.vw / 2;
+    box.cy = box.vh / 2;
 
     if (!gl) return;
-    var dpr = Math.min(window.devicePixelRatio || 1, 3);
-    var w = Math.round(box.w * dpr);
-    if (w > 2560) w = 2560;           // plenty for a 2048px source
-    var h = Math.round(w / 2);
+    // Full sharpness up to 3x screens, but never more than ~6 million pixels,
+    // and less if this device turned out to be too slow for that (see frame()).
+    var scale = Math.min(window.devicePixelRatio || 1, 3, Math.sqrt(6e6 / (box.vw * box.vh))) * quality;
+    scale = Math.max(scale, 0.75);
+    var w = Math.round(box.vw * scale);
+    var h = Math.round(box.vh * scale);
     if (canvas.width !== w || canvas.height !== h) {
       canvas.width = w;
       canvas.height = h;
@@ -453,7 +522,8 @@
     requestAnimationFrame(frame);
     if (!ready || document.hidden) { last = now; return; }
     if (!start) { start = now; last = now; }
-    var dt = Math.min((now - last) / 1000, 0.05);
+    var frameMs = now - last;
+    var dt = Math.min(frameMs / 1000, 0.05);
     last = now;
     var t = (now - start) / 1000;
 
@@ -494,16 +564,27 @@
     needsDraw = false;
     drawn.x = light.x; drawn.y = light.y; drawn.gain = gain;
 
-    draw(light.x, light.y, 0.34, gain);
+    // Smoothness beats sharpness: if frames keep coming slower than 25 a
+    // second, render at a lower resolution from here on. (The bar is below 30
+    // on purpose: phones in low-power mode run at a steady 30 and are fine.)
+    if (frameMs < 250) {
+      slow.ms += (frameMs - slow.ms) * 0.08;
+      if (++slow.frames > 45 && slow.ms > 40 && quality > 0.5) {
+        quality *= 0.8;
+        slow.frames = 0;
+        slow.ms = 16;
+        measure();
+      }
+    }
 
     // Lean the whole piece a few degrees toward the light.
-    var lean = reduceMotion ? 0 : 1;
+    var lean = reduceMotion ? 0 : Math.PI / 180;
     var rx = Math.max(-1, Math.min(1, (light.y - 0.5) * 1.4));
     var ry = Math.max(-1, Math.min(1, (light.x - 1.0) * 0.9));
-    logo.style.setProperty('--tilt-x', (-rx * 5 * lean).toFixed(3) + 'deg');
-    logo.style.setProperty('--tilt-y', (ry * 6 * lean).toFixed(3) + 'deg');
 
-    if (!logo.classList.contains('is-live')) logo.classList.add('is-live');
+    draw(light.x, light.y, 0.34, rx * 5 * lean, ry * 6 * lean, gain);
+
+    if (!stage.classList.contains('is-live')) stage.classList.add('is-live');
   }
 
   /* ------------------------------------------------------------------ */
@@ -524,6 +605,7 @@
   function upload() {
     tex.logo = imageTexture(images[0]);
     tex.relief = imageTexture(images[1]);
+    tex.depth = imageTexture(images[2]);
     measure();
     ready = true;
     needsDraw = true;
@@ -534,27 +616,32 @@
       if (!setupGL()) return;
     } catch (err) {
       gl = null;
-      return;                          // the still image stays
+      if (window.console) console.warn('Silver logo: falling back to the still image.', err);
+      return;
     }
 
     canvas.addEventListener('webglcontextlost', function (e) {
       e.preventDefault();
       ready = false;
       targets = null;
-      logo.classList.remove('is-live');
+      stage.classList.remove('is-live');
     });
     canvas.addEventListener('webglcontextrestored', function () {
       try { setupGL(); upload(); } catch (err) { ready = false; }
     });
 
-    Promise.all([loadImage('assets/logo.webp'), loadImage('assets/logo-relief.webp')])
+    Promise.all([loadImage('assets/logo.webp'), loadImage('assets/logo-relief.webp'), loadImage('assets/logo-depth.webp')])
       .then(function (loaded) {
         images = loaded;
         upload();
       })
       .catch(function () { /* the still image stays */ });
 
-    if (window.ResizeObserver) new ResizeObserver(measure).observe(logo);
+    if (window.ResizeObserver) {
+      var watcher = new ResizeObserver(measure);
+      watcher.observe(stage);
+      watcher.observe(logo);
+    }
     window.addEventListener('resize', measure);
     measure();
     setupTilt();

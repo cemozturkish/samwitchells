@@ -24,7 +24,6 @@ body {
   inset: 0;
   display: grid;
   place-items: center;
-  perspective: 1400px;
 }
 
 .logo {
@@ -34,8 +33,6 @@ body {
   width: min(48vw, 84vh, 750px);
   width: min(48vw, 84dvh, 750px);
   aspect-ratio: 2 / 1;
-  transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
-  will-change: transform;
 }
 
 @media (max-width: 700px) and (orientation: portrait) {
@@ -44,7 +41,15 @@ body {
   }
 }
 
-.logo-still,
+.logo-still {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* The shader draws the whole screen (surface, shadow and metal), so its
+   canvas covers the stage; the logo element just marks where the piece sits. */
 .logo-live {
   position: absolute;
   inset: 0;
@@ -52,18 +57,15 @@ body {
   height: 100%;
   display: block;
   pointer-events: none;
-}
-
-.logo-live {
   opacity: 0;
 }
 
 /* Once the shader has drawn its first frame it takes over from the still. */
-.logo.is-live .logo-live {
+.stage.is-live .logo-live {
   opacity: 1;
 }
 
-.logo.is-live .logo-still {
+.stage.is-live .logo-still {
   visibility: hidden;
 }
 
