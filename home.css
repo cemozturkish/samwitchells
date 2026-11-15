@@ -31,18 +31,16 @@ body {
   position: relative;
   margin: 0;
   /* The artwork is 2:1 with ~5% of empty margin around the lettering. */
-  width: min(96vw, 168vh, 1500px);
-  width: min(96vw, 168dvh, 1500px);
+  width: min(48vw, 84vh, 750px);
+  width: min(48vw, 84dvh, 750px);
   aspect-ratio: 2 / 1;
   transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
   will-change: transform;
 }
 
 @media (max-width: 700px) and (orientation: portrait) {
-  /* On a phone let most of the artwork's empty margin hang off the screen
-     so the lettering itself runs nearly edge to edge. */
   .logo {
-    width: 103vw;
+    width: 52vw;
   }
 }
 
