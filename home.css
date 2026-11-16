@@ -79,17 +79,17 @@ body {
   place-items: center;
   width: 56px;
   height: 56px;
-  color: #c9cbd3;
   opacity: 0;
   animation: listen-in 1.2s ease 0.8s forwards;
-  transition: color 0.3s ease;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 10px rgba(200, 205, 220, 0.12));
+  transition: filter 0.3s ease;
   touch-action: manipulation;
   -webkit-touch-callout: none;
 }
 
 .listen:hover,
 .listen:focus-visible {
-  color: #fff;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 12px rgba(220, 225, 240, 0.35)) brightness(1.15);
 }
 
 .listen:focus-visible {
@@ -99,7 +99,7 @@ body {
 }
 
 @keyframes listen-in {
-  to { opacity: 0.78; }
+  to { opacity: 0.95; }
 }
 
 .tilt-hint {
