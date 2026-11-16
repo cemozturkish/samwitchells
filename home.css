@@ -69,7 +69,7 @@ body {
   visibility: hidden;
 }
 
-/* Spotify: a quiet silver mark under the logo, above the tilt hint. */
+/* Spotify: a quiet silver mark under the logo. */
 .listen {
   position: fixed;
   left: 50%;
@@ -102,37 +102,8 @@ body {
   to { opacity: 0.95; }
 }
 
-.tilt-hint {
-  position: fixed;
-  left: 50%;
-  bottom: calc(28px + env(safe-area-inset-bottom, 0px));
-  transform: translateX(-50%);
-  margin: 0;
-  padding: 12px 18px;
-  border: 0;
-  background: none;
-  color: #c9cbd3;
-  font: 500 11px/1 "Helvetica Neue", Helvetica, Arial, sans-serif;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  opacity: 0;
-  transition: opacity 0.9s ease;
-  cursor: pointer;
-}
-
-.tilt-hint.is-visible {
-  opacity: 0.62;
-  animation: tilt-hint-breathe 3.2s ease-in-out 0.9s infinite;
-}
-
-@keyframes tilt-hint-breathe {
-  0%, 100% { opacity: 0.62; }
-  50%      { opacity: 0.28; }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .tilt-hint.is-visible {
-    animation: none;
+  .listen {
+    animation-duration: 0.01s;
   }
 }
