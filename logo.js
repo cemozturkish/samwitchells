@@ -19,7 +19,6 @@
   if (!logo) return;
   var stage = logo.parentNode;
   var canvas = stage.querySelector('canvas');   // covers the whole screen
-  var hint = document.getElementById('tilt-hint');
   var chrome = document.getElementById('listen-chrome');
   var spec = document.getElementById('listen-spec');
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -475,44 +474,40 @@
       tilt.baseY = tilt.upY;
       tilt.hasBase = true;
     }
-    if (!tilt.active) {
-      tilt.active = true;
-      hideHint();
-    }
+    tilt.active = true;
   }
 
+  var listening = false;
   function listenForTilt() {
+    if (listening) return;
+    listening = true;
     window.addEventListener('deviceorientation', onOrientation, { passive: true });
     window.addEventListener('orientationchange', function () { tilt.hasBase = false; });
-  }
-
-  function hideHint() {
-    if (!hint) return;
-    hint.classList.remove('is-visible');
-    window.setTimeout(function () { hint.hidden = true; }, 1000);
   }
 
   function setupTilt() {
     var DOE = window.DeviceOrientationEvent;
     if (!DOE) return;
     if (!isHandheld) return;
-    if (typeof DOE.requestPermission !== 'function') {
-      listenForTilt();                 // Android and friends: no permission step
-      return;
-    }
-    // iOS only hands out motion data after a tap, so ask on the first one.
-    if (hint) {
-      hint.hidden = false;
-      window.setTimeout(function () { hint.classList.add('is-visible'); }, 1400);
-    }
+    // Android and friends need no permission. On iOS this also picks the
+    // motion up straight away if the visitor already allowed it earlier.
+    listenForTilt();
+    if (typeof DOE.requestPermission !== 'function') return;
+
+    // iOS will only show its motion prompt in response to a touch (Safari
+    // refuses it on page load), so ask silently on the first one, wherever it
+    // lands. Until then the light wanders on its own.
+    var asked = false;
     function ask(e) {
+      if (asked || tilt.active) return;
       // A tap on a link (Spotify) should just open it, not ask for motion.
       if (e && e.target && e.target.closest && e.target.closest('a')) return;
+      asked = true;
+      window.removeEventListener('touchend', ask);
       window.removeEventListener('click', ask);
-      DOE.requestPermission().then(function (state) {
-        if (state === 'granted') listenForTilt();
-      }).catch(function () {}).then(hideHint);
+      DOE.requestPermission().catch(function () {});
     }
+    window.addEventListener('touchend', ask, { passive: true });
     window.addEventListener('click', ask);
   }
 
