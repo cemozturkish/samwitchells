@@ -8,6 +8,8 @@ Writes assets/logo.webp      the logo composited on black (also the no-WebGL fal
        assets/logo-relief.webp R,G = surface normal x,y   B = "is metal" mask
                                (lossless: lossy compression shows up as grit
                                in the reflections)
+       assets/logo-depth.webp  R = tight shadow, G = wide shadow, B = thick
+                               letter bodies as opposed to the thin rim wire
 
 The artwork is a flat picture, so the 3D surface is reconstructed: every lit
 piece of metal is inflated into a rounded relief, and the slope of that relief
@@ -49,6 +51,16 @@ gy, gx = np.gradient(height)
 normal = np.dstack([-gx, -gy, np.ones_like(height)])
 normal /= np.linalg.norm(normal, axis=2, keepdims=True)
 
+# --- depth cues -------------------------------------------------------------
+# The shadow the whole piece throws on the surface behind it, at two softnesses
+# (the shader blends them by distance from the lamp), and a mask of the thick
+# letter bodies so the hair-thin rim wire can be lit more quietly than them.
+yy, xx = np.mgrid[-4:5, -4:5]
+disk = (xx * xx + yy * yy) <= 16
+body = ndi.gaussian_filter(ndi.binary_opening(metal_bin, structure=disk).astype(np.float64), 2.0)
+shadow_tight = ndi.gaussian_filter(alpha, 7.0)
+shadow_wide = ndi.gaussian_filter(alpha, 34.0)
+
 # --- write ------------------------------------------------------------------
 def to_u8(x):
     return np.clip(x * 255.0 + 0.5, 0, 255).astype(np.uint8)
@@ -59,8 +71,10 @@ out = ROOT / "assets"
 out.mkdir(exist_ok=True)
 Image.fromarray(relief, "RGB").save(out / "logo-relief.webp", lossless=True, method=6)
 Image.fromarray(to_u8(rgb), "RGB").save(out / "logo.webp", quality=93, method=6)
+depth = Image.fromarray(np.dstack([to_u8(shadow_tight), to_u8(shadow_wide), to_u8(body)]), "RGB")
+depth.resize((SIZE[0] // 2, SIZE[1] // 2), Image.BOX).save(out / "logo-depth.webp", lossless=True, method=6)
 
-for name in ("logo.webp", "logo-relief.webp"):
+for name in ("logo.webp", "logo-relief.webp", "logo-depth.webp"):
     print(f"{name}: {(out / name).stat().st_size / 1024:.0f} KB")
 print(f"steepest slope: {np.degrees(np.arccos(normal[..., 2].min())):.0f} deg, "
       f"median on metal: {np.degrees(np.arccos(np.median(normal[..., 2][metal_bin]))):.0f} deg")
