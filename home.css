@@ -69,6 +69,39 @@ body {
   visibility: hidden;
 }
 
+/* Spotify: a quiet silver mark under the logo, above the tilt hint. */
+.listen {
+  position: fixed;
+  left: 50%;
+  bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  color: #c9cbd3;
+  opacity: 0;
+  animation: listen-in 1.2s ease 0.8s forwards;
+  transition: color 0.3s ease;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+}
+
+.listen:hover,
+.listen:focus-visible {
+  color: #fff;
+}
+
+.listen:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+
+@keyframes listen-in {
+  to { opacity: 0.78; }
+}
+
 .tilt-hint {
   position: fixed;
   left: 50%;

@@ -503,7 +503,9 @@
       hint.hidden = false;
       window.setTimeout(function () { hint.classList.add('is-visible'); }, 1400);
     }
-    function ask() {
+    function ask(e) {
+      // A tap on a link (Spotify) should just open it, not ask for motion.
+      if (e && e.target && e.target.closest && e.target.closest('a')) return;
       window.removeEventListener('click', ask);
       DOE.requestPermission().then(function (state) {
         if (state === 'granted') listenForTilt();
