@@ -20,6 +20,8 @@
   var stage = logo.parentNode;
   var canvas = stage.querySelector('canvas');   // covers the whole screen
   var hint = document.getElementById('tilt-hint');
+  var chrome = document.getElementById('listen-chrome');
+  var spec = document.getElementById('listen-spec');
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var isHandheld = window.matchMedia('(hover: none) and (pointer: coarse)').matches;   // phones, tablets
 
@@ -514,6 +516,17 @@
     window.addEventListener('click', ask);
   }
 
+  /* ---- the Spotify mark catches the same light ---- */
+
+  function shineIcon(x, y) {
+    if (!chrome || !spec) return;
+    var dx = x - REST.x, dy = y - REST.y;
+    chrome.setAttribute('gradientTransform',
+      'rotate(' + (35 + dy * 50).toFixed(2) + ' .5 .5) translate(' + (dx * 0.4).toFixed(3) + ' 0)');
+    spec.setAttribute('cx', (0.5 + dx * 0.3).toFixed(3));
+    spec.setAttribute('cy', (0.3 + dy * 0.6).toFixed(3));
+  }
+
   /* ---- animation ---- */
 
   function ease(current, target, rate, dt) {
@@ -585,6 +598,7 @@
     var ry = Math.max(-1, Math.min(1, (light.x - 1.0) * 0.9));
 
     draw(light.x, light.y, 0.34, rx * 5 * lean, ry * 6 * lean, gain);
+    shineIcon(light.x, light.y);
 
     if (!stage.classList.contains('is-live')) stage.classList.add('is-live');
   }
