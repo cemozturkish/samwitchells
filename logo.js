@@ -500,7 +500,7 @@
     var asked = false;
     function ask(e) {
       if (asked || tilt.active) return;
-      // A tap on a link (Spotify) should just open it, not ask for motion.
+      // A tap on a link (Spotify, Apple Music) should just open it, not ask for motion.
       if (e && e.target && e.target.closest && e.target.closest('a')) return;
       asked = true;
       window.removeEventListener('touchend', ask);
@@ -511,7 +511,7 @@
     window.addEventListener('click', ask);
   }
 
-  /* ---- the Spotify mark catches the same light ---- */
+  /* ---- the listen marks catch the same light ---- */
 
   function shineIcon(x, y) {
     if (!chrome || !spec) return;
